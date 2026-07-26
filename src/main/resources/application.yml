@@ -1,0 +1,11 @@
+micronaut:
+  application:
+    name: openwebui-bridge
+
+app:
+  system-prompt-path: config/system-prompt.txt
+
+langchain4j:
+  anthropic:
+    api-key: ${ANTHROPIC_API_KEY}
+    model-name: claude-sonnet-4-5
