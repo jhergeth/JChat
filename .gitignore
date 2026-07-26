@@ -35,3 +35,6 @@ bin/
 .env
 application-local.yml
 *.local.yml
+/gradle/wrapper/gradle-wrapper.jar
+/gradlew
+/gradlew.bat

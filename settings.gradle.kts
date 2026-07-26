@@ -1,4 +1,4 @@
-rootProject.name = "openwebui-bridge"
+rootProject.name = "jchat"
 
 pluginManagement {
     repositories {

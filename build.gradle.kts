@@ -3,7 +3,7 @@ plugins {
 }
 
 version = "0.1"
-group = "com.example"
+group = "name.hergeth.jchat"
 
 repositories {
     mavenCentral()
@@ -26,7 +26,7 @@ dependencies {
 }
 
 application {
-    mainClass = "com.example.Application"
+    mainClass = "name.hergeth.jchat.Application"
 }
 
 java {
@@ -40,6 +40,6 @@ micronaut {
     testRuntime("junit5")
     processing {
         incremental(true)
-        annotations("com.example.*")
+        annotations("name.hergeth.jchat.*")
     }
 }
