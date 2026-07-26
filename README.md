@@ -1,4 +1,4 @@
-# openwebui-bridge
+# JChat
 
 Micronaut-Anwendung, die eine OpenAI-kompatible `/v1/chat/completions`-Schnittstelle
 bereitstellt und intern über LangChain4j ein LLM (Standard: Anthropic) anspricht.
