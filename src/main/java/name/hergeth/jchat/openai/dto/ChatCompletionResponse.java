@@ -1,4 +1,4 @@
-package com.example.openai.dto;
+package name.hergeth.jchat.openai.dto;
 
 import java.util.List;
 

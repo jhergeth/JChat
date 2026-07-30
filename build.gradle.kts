@@ -14,13 +14,22 @@ dependencies {
     annotationProcessor("io.micronaut.langchain4j:micronaut-langchain4j-processor")
 
     implementation("io.micronaut:micronaut-http-client")
+    implementation("io.micronaut:micronaut-jackson-databind")
     implementation("io.micronaut.langchain4j:micronaut-langchain4j-core")
 
-    // Provider-Modul: austauschbar, z.B. auch -openai oder -ollama
+    // Micronaut-Provider-Module (Runtime-Integration)
     implementation("io.micronaut.langchain4j:micronaut-langchain4j-anthropic")
+    implementation("io.micronaut.langchain4j:micronaut-langchain4j-openai")
+    implementation("io.micronaut.langchain4j:micronaut-langchain4j-ollama")
+
+    // Compile-Zugriff für manuelles Modell-Building in ChatModelRegistry
+    implementation("dev.langchain4j:langchain4j-anthropic")
+    implementation("dev.langchain4j:langchain4j-open-ai")
+    implementation("dev.langchain4j:langchain4j-ollama")
 
     implementation("jakarta.annotation:jakarta.annotation-api")
     runtimeOnly("ch.qos.logback:logback-classic")
+    runtimeOnly("org.yaml:snakeyaml")
 
     testImplementation("io.micronaut:micronaut-http-client")
 }

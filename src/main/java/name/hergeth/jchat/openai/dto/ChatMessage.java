@@ -1,3 +1,3 @@
-package com.example.openai.dto;
+package name.hergeth.jchat.openai.dto;
 
 public record ChatMessage(String role, String content) {}
