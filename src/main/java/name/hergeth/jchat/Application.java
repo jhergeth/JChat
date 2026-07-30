@@ -1,4 +1,4 @@
-package com.example;
+package name.hergeth.jchat;
 
 import io.micronaut.runtime.Micronaut;
 

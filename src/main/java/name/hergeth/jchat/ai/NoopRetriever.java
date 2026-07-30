@@ -1,5 +1,6 @@
-package com.example.ai;
+package name.hergeth.jchat.ai;
 
+import name.hergeth.jchat.ai.model.Statement;
 import jakarta.inject.Singleton;
 
 import java.util.List;
@@ -8,7 +9,7 @@ import java.util.List;
 public class NoopRetriever implements Retriever {
 
     @Override
-    public List<String> retrieve(String query) {
+    public List<Statement> retrieve(String conversationId, String query) {
         return List.of();
     }
 }
