@@ -15,7 +15,10 @@ jackson:
 app:
   system-prompt-path: system-prompt.txt
   extraction-prompt-path: extraction-prompt.txt
-  record-meta-in-debug: false
+  context:
+    recent-turns: 3
+  retriever:
+    max-statements: 12
 
 llm:
   providers:

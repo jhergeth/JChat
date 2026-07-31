@@ -54,7 +54,7 @@ async function fetchData() {
     const params = new URLSearchParams({
       limit: '30',
       conversationId: conv,
-      includeMeta: hideMetaRequests.value ? 'false' : 'true',
+      includeMeta: 'true',
     })
     const tracesUrl = `/api/debug/traces?${params}`
     const storeUrl = `/api/debug/knowledge-store?conversationId=${encodeURIComponent(conv)}`

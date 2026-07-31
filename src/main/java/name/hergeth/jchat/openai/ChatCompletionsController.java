@@ -15,7 +15,6 @@ import name.hergeth.jchat.openai.dto.ChatCompletionResponse;
 import name.hergeth.jchat.openai.dto.ChatMessage;
 import name.hergeth.jchat.openai.dto.Choice;
 import name.hergeth.jchat.openai.dto.Usage;
-import io.micronaut.context.annotation.Value;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
@@ -59,9 +58,6 @@ public class ChatCompletionsController {
     @Inject
     DebugTraceService debugTraceService;
 
-    @Value("${app.record-meta-in-debug:false}")
-    boolean recordMetaInDebug;
-
     @Post("/chat/completions")
     public ChatCompletionResponse chatCompletions(@Body ChatCompletionRequest request) {
 
@@ -98,10 +94,8 @@ public class ChatCompletionsController {
             }
         }
 
-        if (isChat || recordMetaInDebug) {
-            debugTraceService.record(
-                    conversationId, lastUserMessage, retrievedContext, messages, answer, provider);
-        }
+        debugTraceService.record(
+                conversationId, requestType, lastUserMessage, retrievedContext, messages, answer, provider);
 
         ChatMessage responseMessage = new ChatMessage("assistant", answer);
         Choice choice = new Choice(0, responseMessage, "stop");

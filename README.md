@@ -12,14 +12,15 @@ src/main/java/name/hergeth/jchat/
 ├── Application.java
 ├── ai/
 │   ├── SystemPromptProvider.java
-│   ├── PromptBuilder.java / FullHistoryPromptBuilder.java
+│   ├── PromptBuilder.java / ContextWindowPromptBuilder.java
+│   ├── ConversationTurns.java / QueryTerms.java / StatementRelevanceScorer.java
 │   ├── ConversationIds.java
 │   ├── TurnFactory.java / TurnRenderer.java / TurnProcessor.java
 │   ├── model/                      # Turn, Statement (Triple), ToolResult
 │   ├── StatementExtractor.java / LlmStatementExtractor.java
 │   ├── StatementParser.java
 │   ├── StatementNormalizer.java / IdentityStatementNormalizer.java
-│   ├── Retriever.java / NoopRetriever.java
+│   ├── Retriever.java / RelevanceRetriever.java
 │   └── KnowledgeStore.java / InMemoryKnowledgeStore.java
 ├── ai/llm/
 │   ├── ChatModelRegistry.java      # Anthropic, OpenAI, Ollama
@@ -126,7 +127,8 @@ Im Open-WebUI-Dropdown erscheinen die Provider-Namen aus `llm.providers` (z. B. 
 - **Kein Streaming**: Antworten kommen komplett auf einmal statt Token für Token.
   Open WebUI erwartet standardmäßig SSE (`stream: true`) – funktioniert erstmal
   auch ohne, wirkt aber weniger „flüssig“.
-- **Retriever**: noch No-op — der Knowledge Store wird befüllt, aber noch nicht für den Prompt genutzt (Schritt 3).
+- **Retriever**: keyword-basiert — relevante Triples aus dem Knowledge Store (Schritt 3).
+- **Prompt**: letzte `app.context.recent-turns` Turns als Klartext + retrieved Wissen im System-Prompt.
 - **Extraktion**: Nach jedem Turn ruft `ollama-fast` Triples ab (`subject | predicate | object`),
   normalisiert sie und speichert sie im In-Memory-Store pro `conversation_id`.
 - **KnowledgeStore**: rein In-Memory, geht beim Neustart verloren.

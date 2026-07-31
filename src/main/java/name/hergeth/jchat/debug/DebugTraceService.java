@@ -22,6 +22,7 @@ public class DebugTraceService {
 
     public void record(
             String conversationId,
+            String requestType,
             String userInput,
             List<String> retrievedContext,
             List<ChatMessage> prompt,
@@ -31,7 +32,7 @@ public class DebugTraceService {
                 UUID.randomUUID().toString(),
                 Instant.now(),
                 conversationId,
-                DebugRequestClassifier.classify(userInput),
+                requestType,
                 userInput,
                 retrievedContext,
                 prompt.stream().map(m -> new PromptLine(m.role(), m.content())).toList(),

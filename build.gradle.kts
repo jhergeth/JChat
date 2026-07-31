@@ -33,6 +33,7 @@ dependencies {
     runtimeOnly("ch.qos.logback:logback-classic")
 
     testImplementation("io.micronaut:micronaut-http-client")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter")
 }
 
 application {
