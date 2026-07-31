@@ -1,0 +1,25 @@
+# AM5: Zwei Ollama-Instanzen in Docker (P100 + GTX 1080)
+#
+# GPU-Zuordnung (nvidia-smi):
+#   GPU 0 — GTX 1080  (8 GB)  → ollama-gtx, Host-Port 11435, qwen2.5:7b (Extraktion)
+#   GPU 1 — P100      (16 GB) → ollama,     Host-Port 11434, llama3.1:8b (Chat)
+#
+# Auf am5 in ~/ollama-webui:
+#   cp /path/to/JChat/deploy/docker-compose.yaml docker-compose.yaml
+#   docker compose up -d
+#
+# Modelle (Volume wird geteilt — ein pull reicht):
+#   docker exec ollama     ollama pull llama3.1:8b
+#   docker exec ollama-gtx ollama pull qwen2.5:7b
+#
+# Prüfen:
+#   curl http://localhost:11434/api/tags
+#   curl http://localhost:11435/api/tags
+#   nvidia-smi
+#
+# JChat application.yml:
+#   ollama-main    → http://am5:11434
+#   ollama-extract → http://am5:11435
+#
+# Bei OOM auf GTX 1080: num-ctx in application.yml auf 2048 reduzieren
+# oder qwen2.5:3b statt 7b verwenden.

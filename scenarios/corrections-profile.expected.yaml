@@ -1,0 +1,17 @@
+mustContain:
+  - subject: Maria
+    predicate: wohnt_in
+    object: Augsburg
+  - subject: Maria
+    predicate: arbeitet_bei
+    object: TechLine
+  - subject: Maria
+    predicate: hobby
+    object: Klettern
+  - subject: Maria
+    predicate: lieblingsessen
+    object: Ramen
+  - subject: Maria
+    predicate: faehrt
+    object: RAV4
+minStatements: 5

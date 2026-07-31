@@ -11,6 +11,7 @@ public class LlmProviderConfig {
     private String apiKey;
     private String modelName;
     private String baseUrl;
+    private Integer numCtx;
 
     public LlmProviderConfig(@Parameter String name) {
         this.name = name;
@@ -25,4 +26,6 @@ public class LlmProviderConfig {
     public void setModelName(String modelName) { this.modelName = modelName; }
     public String getBaseUrl() { return baseUrl; }
     public void setBaseUrl(String baseUrl) { this.baseUrl = baseUrl; }
+    public Integer getNumCtx() { return numCtx; }
+    public void setNumCtx(Integer numCtx) { this.numCtx = numCtx; }
 }

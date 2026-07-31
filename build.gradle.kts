@@ -1,5 +1,6 @@
 plugins {
     id("io.micronaut.application") version "4.4.4"
+    id("com.github.node-gradle.node") version "7.1.0"
 }
 
 version = "0.1"
@@ -28,8 +29,8 @@ dependencies {
     implementation("dev.langchain4j:langchain4j-ollama")
 
     implementation("jakarta.annotation:jakarta.annotation-api")
+    implementation("org.yaml:snakeyaml")
     runtimeOnly("ch.qos.logback:logback-classic")
-    runtimeOnly("org.yaml:snakeyaml")
 
     testImplementation("io.micronaut:micronaut-http-client")
 }
@@ -51,4 +52,36 @@ micronaut {
         incremental(true)
         annotations("name.hergeth.jchat.*")
     }
+}
+
+node {
+    version.set("22.14.0")
+    download.set(true)
+    nodeProjectDir.set(file("frontend"))
+}
+
+tasks.named<com.github.gradle.node.npm.task.NpmTask>("npm_run_build") {
+    group = "frontend"
+    description = "Baut das Vue-Debug-UI nach frontend/dist"
+    outputs.dir("frontend/dist")
+}
+
+tasks.named<com.github.gradle.node.npm.task.NpmTask>("npmInstall") {
+    group = "frontend"
+    description = "Installiert npm-Abhängigkeiten in frontend/ (lädt Node bei Bedarf herunter)"
+}
+
+tasks.named<ProcessResources>("processResources") {
+    dependsOn("npm_run_build")
+    from("frontend/dist") {
+        into("META-INF/resources")
+    }
+}
+
+tasks.register<JavaExec>("runScenarios") {
+    group = "verification"
+    description = "Führt Chat-Szenarien gegen JChat aus und speichert Knowledge-Store-Snapshots"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("name.hergeth.jchat.scenario.ScenarioRunnerMain")
+    args(listOf("--base-url", "http://localhost:8080"))
 }

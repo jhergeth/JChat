@@ -54,10 +54,15 @@ public class ChatModelRegistry {
                     .apiKey(config.getApiKey())
                     .modelName(config.getModelName())
                     .build();
-            case "ollama" -> OllamaChatModel.builder()
-                    .baseUrl(config.getBaseUrl())
-                    .modelName(config.getModelName())
-                    .build();
+            case "ollama" -> {
+                var builder = OllamaChatModel.builder()
+                        .baseUrl(config.getBaseUrl())
+                        .modelName(config.getModelName());
+                if (config.getNumCtx() != null) {
+                    builder.numCtx(config.getNumCtx());
+                }
+                yield builder.build();
+            }
             default -> throw new IllegalArgumentException(
                     "Unbekannter Provider-Typ: " + config.getType());
         };

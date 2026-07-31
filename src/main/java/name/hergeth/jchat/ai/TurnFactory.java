@@ -19,7 +19,8 @@ public final class TurnFactory {
                 lastUserMessage(messages),
                 assistantReply,
                 toolResults(messages),
-                Instant.now());
+                Instant.now(),
+                TurnRenderer.renderConversation(messages, assistantReply));
     }
 
     private static String lastUserMessage(List<ChatMessage> messages) {

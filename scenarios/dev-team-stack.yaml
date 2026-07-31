@@ -1,0 +1,15 @@
+name: dev-team-stack
+conversationId: scenario-dev-team-stack
+model: ollama-main
+description: Entwicklerteam, Projekt StackOverflow-Klon, Technologien und Deployment
+turns:
+  - "Ich heisse Lukas Mueller, wohne in Berlin und bin Backend-Entwickler bei DataForge GmbH."
+  - "Unser Projekt heisst QueryHub und ist in Kotlin geschrieben."
+  - "QueryHub nutzt PostgreSQL als Datenbank."
+  - "QueryHub laeuft auf dem Server srv-prod-01 in Frankfurt."
+  - "Wie heisst unser Projekt und in welcher Sprache ist es geschrieben?"
+  - "Meine Kollegin Sara arbeitet auch bei DataForge GmbH. Sie ist Frontend-Entwicklerin."
+  - "Sara arbeitet am QueryHub-Dashboard mit Vue.js."
+  - "Die QueryHub-API lauscht auf Port 8080."
+  - "Welche Datenbank nutzt QueryHub und auf welchem Server laeuft es?"
+  - "Wer arbeitet am Frontend von QueryHub?"

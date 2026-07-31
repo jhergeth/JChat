@@ -1,0 +1,17 @@
+mustContain:
+  - subject: Lukas
+    predicate: arbeitet_bei
+    object: DataForge
+  - subject: Lukas
+    predicate: wohnt_in
+    object: Berlin
+  - subject: QueryHub
+    predicate: nutzt
+    object: PostgreSQL
+  - subject: QueryHub
+    predicate: laeuft_auf
+    object: srv-prod
+  - subject: Sara
+    predicate: arbeitet_bei
+    object: DataForge
+minStatements: 6

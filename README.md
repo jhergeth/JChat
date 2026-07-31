@@ -14,9 +14,10 @@ src/main/java/name/hergeth/jchat/
 │   ├── SystemPromptProvider.java
 │   ├── PromptBuilder.java / FullHistoryPromptBuilder.java
 │   ├── ConversationIds.java
-│   ├── TurnFactory.java
+│   ├── TurnFactory.java / TurnRenderer.java / TurnProcessor.java
 │   ├── model/                      # Turn, Statement (Triple), ToolResult
-│   ├── StatementExtractor.java / NoopStatementExtractor.java
+│   ├── StatementExtractor.java / LlmStatementExtractor.java
+│   ├── StatementParser.java
 │   ├── StatementNormalizer.java / IdentityStatementNormalizer.java
 │   ├── Retriever.java / NoopRetriever.java
 │   └── KnowledgeStore.java / InMemoryKnowledgeStore.java
@@ -28,6 +29,12 @@ src/main/java/name/hergeth/jchat/
 └── openai/
     ├── ChatCompletionsController.java  # POST /v1/chat/completions, GET /v1/models
     └── dto/                             # OpenAI-kompatible Request-/Response-Typen
+├── debug/
+│   ├── DebugController.java             # GET /api/debug/*
+│   └── DebugTraceService.java           # Snapshots pro Turn
+└── ...
+
+frontend/                                # Vue 3 Debug-UI → META-INF/resources/
 
 src/main/resources/system-prompt.txt   # System-Prompt (Classpath)
 config/system-prompt.txt               # optional: Override per Dateipfad
@@ -54,6 +61,33 @@ Nur Ollama lokal (ohne Cloud-Keys):
 
 Server läuft danach auf `http://localhost:8080`.
 
+## Debug-UI
+
+Nach `./gradlew run` ist das Debug-UI unter **http://localhost:8080/** erreichbar.
+(Vor dem ersten Start oder nach Frontend-Änderungen: `./gradlew processResources` bzw. `./gradlew run` baut das UI automatisch mit.)
+
+Frontend-Abhängigkeiten und Build (Node wird bei Bedarf von Gradle heruntergeladen — kein systemweites npm nötig):
+
+```bash
+./gradlew npmInstall      # npm install in frontend/
+./gradlew npm_run_build   # Vue-UI bauen
+./gradlew run
+```
+
+Entwicklung mit Hot-Reload:
+
+```bash
+cd frontend && npm install && npm run dev   # Proxy auf :8080
+```
+
+Das UI zeigt pro Turn (Auto-Refresh alle 2s): User-Eingabe, Kontext, Prompt, LLM-Antwort, Knowledge Store.
+
+API:
+
+- `GET /api/debug/latest?conversationId=...`
+- `GET /api/debug/knowledge-store?conversationId=default`
+- `GET /api/debug/traces?limit=20`
+
 ## Mit Open WebUI verbinden
 
 In Open WebUI unter **Admin Settings → Connections → OpenAI**:
@@ -66,13 +100,24 @@ In Open WebUI unter **Admin Settings → Connections → OpenAI**:
 Alle Provider stehen in [`application.yml`](src/main/resources/application.yml) unter `llm.providers`.
 Nicht konfigurierte Provider (fehlender API-Key) werden beim Start übersprungen.
 
-Aufgaben-Zuordnung unter `llm.tasks`:
+Aufgaben-Zuordnung unter `llm.tasks` (jeweils mit `provider`-Feld):
+
+```yaml
+llm:
+  tasks:
+    chat:
+      provider: ollama-main
+    extraction:
+      provider: ollama-fast
+    default:
+      provider: ollama-main
+```
 
 | Aufgabe     | Standard-Provider | Verwendung                          |
 |-------------|-------------------|-------------------------------------|
-| `chat`      | anthropic-main    | Haupt-Chat (LLM_GROSS)              |
-| `extraction`| anthropic-fast    | Vorbereitet für Schritt 2           |
-| `default`   | anthropic-main    | Fallback                            |
+| `chat`      | ollama-main       | Haupt-Chat (LLM_GROSS)              |
+| `extraction`| ollama-fast       | Triple-Extraktion nach jedem Turn   |
+| `default`   | ollama-main       | Fallback                            |
 
 Im Open-WebUI-Dropdown erscheinen die Provider-Namen aus `llm.providers` (z. B. `anthropic-main`, `ollama-local`).
 
@@ -81,8 +126,8 @@ Im Open-WebUI-Dropdown erscheinen die Provider-Namen aus `llm.providers` (z. B. 
 - **Kein Streaming**: Antworten kommen komplett auf einmal statt Token für Token.
   Open WebUI erwartet standardmäßig SSE (`stream: true`) – funktioniert erstmal
   auch ohne, wirkt aber weniger „flüssig“.
-- **Retriever, StatementExtractor**: aktuell No-op-Implementierungen. Interfaces und
-  Datenmodelle für Schritt 2 sind vorbereitet (`Turn`, `Statement`, `StatementNormalizer`,
-  Conversation-Scope im Store/Retriever). Extraktion (LLM → Normalizer → Store) folgt in Schritt 2.
-- **KnowledgeStore**: rein In-Memory, pro `conversation_id` (Fallback: `"default"`).
+- **Retriever**: noch No-op — der Knowledge Store wird befüllt, aber noch nicht für den Prompt genutzt (Schritt 3).
+- **Extraktion**: Nach jedem Turn ruft `ollama-fast` Triples ab (`subject | predicate | object`),
+  normalisiert sie und speichert sie im In-Memory-Store pro `conversation_id`.
+- **KnowledgeStore**: rein In-Memory, geht beim Neustart verloren.
   Optional im Request: `"conversation_id": "..."`.

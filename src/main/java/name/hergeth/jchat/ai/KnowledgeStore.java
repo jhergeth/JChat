@@ -6,5 +6,6 @@ import java.util.List;
 
 public interface KnowledgeStore {
     void add(Statement statement);
+    void replaceAll(String conversationId, List<Statement> statements);
     List<Statement> all(String conversationId);
 }

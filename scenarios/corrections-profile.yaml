@@ -1,0 +1,15 @@
+name: corrections-profile
+conversationId: scenario-corrections-profile
+model: ollama-main
+description: Profil mit Korrekturen — Wohnort, Auto und Arbeitgeber werden korrigiert
+turns:
+  - "Ich heisse Maria Schmidt, wohne in Muenchen und mein Hobby ist Klettern."
+  - "Ich habe eine Katze namens Minka."
+  - "Korrektur: Ich wohne nicht in Muenchen, sondern in Augsburg."
+  - "Ich arbeite bei TechLine AG als Produktmanagerin."
+  - "In welcher Stadt wohne ich?"
+  - "Ich fahre einen VW Golf 8."
+  - "Stimmt nicht — ich fahre einen Toyota RAV4."
+  - "Mein Lieblingsessen ist Ramen."
+  - "Was ist mein Hobby und wie heisst meine Katze?"
+  - "Bei welcher Firma arbeite ich und welches Auto fahre ich?"

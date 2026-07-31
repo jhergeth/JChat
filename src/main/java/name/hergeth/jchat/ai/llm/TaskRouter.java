@@ -18,6 +18,18 @@ public class TaskRouter {
     }
 
     public String providerFor(String task) {
-        return taskToProvider.getOrDefault(task, taskToProvider.get("default"));
+        String provider = taskToProvider.get(task);
+        if (provider == null) {
+            provider = taskToProvider.get("default");
+        }
+        if (provider == null) {
+            throw new IllegalStateException(
+                    "Kein Provider fuer Aufgabe '" + task + "' konfiguriert (llm.tasks." + task + ".provider)");
+        }
+        return provider;
+    }
+
+    public boolean hasTask(String task) {
+        return taskToProvider.containsKey(task);
     }
 }

@@ -1,0 +1,14 @@
+mustContain:
+  - subject: Anna
+    predicate: wohnt_in
+    object: Hamburg
+  - subject: Anna
+    predicate: arbeitet_bei
+    object: Acme
+  - subject: JChat
+    predicate: laeuft_auf
+    object: AM5
+  - subject: AM5
+    predicate: hat_gpu
+    object: P100
+minStatements: 6

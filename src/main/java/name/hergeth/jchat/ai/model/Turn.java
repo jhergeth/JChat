@@ -9,5 +9,6 @@ public record Turn(
         String userMessage,
         String assistantMessage,
         List<ToolResult> toolResults,
-        Instant timestamp
+        Instant timestamp,
+        String conversationForExtraction
 ) {}

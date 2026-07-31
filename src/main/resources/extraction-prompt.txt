@@ -1,0 +1,35 @@
+Extrahiere aus dem folgenden Gespraechs-Turn die wichtigsten Fakten als RDF-Triples.
+Antworte NUR mit einer Zeile pro Triple im Format:
+
+subject | predicate | object
+
+Regeln:
+- ALLE Fakten aus der GESAMTEN Konversation extrahieren (auch aus frueheren Turns)
+- Neue Fakten aus dem letzten Austausch unbedingt mit aufnehmen
+- subject: die Entitaet, UEBER die der Fakt gilt (Person, Projekt, Server, Geraet)
+- NIEMALS "User", "Assistant" oder "Tool" als subject
+- predicate: kurz, snake_case, NUR deutsch (z.B. wohnt_in, arbeitet_bei, lieblingsfarbe, laeuft_auf, nutzt, hat_gpu)
+- object: konkret und spezifisch — keine Platzhalter, keine Booleans wie true/false
+- Nur Fakten die EXPLIZIT im Gespraech stehen — nichts erfinden oder raten
+- Maximal 10 Triples, nur die wichtigsten Fakten
+- Schreibe niemals woertlich "subject", "predicate" oder "object"
+- Bei Korrekturen: korrigierte Fakten extrahieren, widerlegte ignorieren
+- Keine Erklaerungen, keine Nummerierung, kein Markdown, kein Englisch in predicates
+
+Richtung (subject ist immer die Entitaet, der der Fakt zugeordnet wird):
+- Person arbeitet_bei Unternehmen (NICHT: Unternehmen arbeitet_bei Person)
+- Person wohnt_in Stadt
+- Projekt nutzt Software / laeuft_auf Server
+- Server hat_gpu Grafikkarte
+- Projekt nutzt_gpu Grafikkarte (wenn Projekt die GPU nutzt)
+
+Beispiele fuer dieses Gespraechsthema (nur Format/Richtung, nicht blind wiederholen):
+Anna | wohnt_in | Hamburg
+Anna | arbeitet_bei | Acme GmbH
+Anna | lieblingsfarbe | gruen
+JChat | name | JChat
+JChat | nutzt | Ollama
+JChat | laeuft_auf | AM5
+AM5 | ist | lokaler Server
+AM5 | hat_gpu | Nvidia P100
+JChat | nutzt_gpu | Nvidia P100

@@ -1,9 +1,21 @@
 micronaut:
   application:
     name: jchat
+  router:
+    static-resources:
+      default:
+        enabled: true
+        mapping: /**
+        paths: classpath:META-INF/resources
+
+jackson:
+  serialization:
+    write-dates-as-timestamps: false
 
 app:
   system-prompt-path: system-prompt.txt
+  extraction-prompt-path: extraction-prompt.txt
+  record-meta-in-debug: false
 
 llm:
   providers:
@@ -19,16 +31,22 @@ llm:
 #      type: openai
 #      api-key: ${OPENAI_API_KEY}
 #      model-name: gpt-4o
-    ollama-fast:
-      type: ollama
-      base-url: http://am5:11434
-      model-name: qwen2.5:1.5b
     ollama-main:
       type: ollama
       base-url: http://am5:11434
       model-name: llama3.1:8b
+    ollama-extract:
+      type: ollama
+      base-url: http://am5:11435
+      model-name: qwen2.5:7b
+      num-ctx: 4096
 
   tasks:
-    chat: ollama-main
-    extraction: ollama-fast
-    default: ollama-main
+    chat:
+      provider: ollama-main
+    extraction:
+      provider: ollama-extract
+    meta:
+      provider: ollama-extract
+    default:
+      provider: ollama-main

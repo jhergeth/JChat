@@ -5,19 +5,26 @@ import jakarta.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Singleton
 public class InMemoryKnowledgeStore implements KnowledgeStore {
 
-    private final Map<String, List<Statement>> statementsByConversation = new ConcurrentHashMap<>();
+    private final java.util.Map<String, List<Statement>> statementsByConversation =
+            new java.util.concurrent.ConcurrentHashMap<>();
 
     @Override
     public void add(Statement statement) {
-        statementsByConversation
-                .computeIfAbsent(statement.conversationId(), id -> new ArrayList<>())
-                .add(statement);
+        List<Statement> statements = statementsByConversation
+                .computeIfAbsent(statement.conversationId(), id -> new ArrayList<>());
+        String factKey = StatementTextNormalizer.factKey(statement.subject(), statement.predicate());
+        statements.removeIf(existing ->
+                StatementTextNormalizer.factKey(existing.subject(), existing.predicate()).equals(factKey));
+        statements.add(statement);
+    }
+
+    @Override
+    public void replaceAll(String conversationId, List<Statement> statements) {
+        statementsByConversation.put(conversationId, new ArrayList<>(statements));
     }
 
     @Override

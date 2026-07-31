@@ -1,0 +1,11 @@
+name: anna-jchat-gpu
+conversationId: scenario-anna-jchat-gpu
+model: ollama-main
+description: Anna, JChat, AM5 und Nvidia P100 — Regression aus manuellem Test
+turns:
+  - "Ich heisse Anna, arbeite bei Acme GmbH in Hamburg und meine Lieblingsfarbe ist grün."
+  - "Merke dir: Mein Projekt heisst JChat und nutzt Ollama auf am5."
+  - "Wie heisst mein Projekt und wo läuft Ollama?"
+  - "AM5 ist der name eines lokalen servers."
+  - "Eine Nvidia P100 steckt im AM5."
+  - "Mit welcher karte arbeitet JChat?"
