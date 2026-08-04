@@ -1,0 +1,46 @@
+name: LLM Evaluation (DeepEval)
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  DEEPEVAL_MODEL: "gpt-4o-mini"  # Modell, das als "Judge" dient
+  # DEEP_EVAL_API_KEY: ${{ secrets.DEEPEVAL_API_KEY }} # Optional, für Cloud-Features
+
+jobs:
+  test:
+    name: Run DeepEval Tests
+    # WICHTIG: Label muss exakt mit dem im GitHub UI hinterlegten Label übereinstimmen
+    runs-on: [self-hosted, linux, your-runner-label]
+    
+    env:
+      # OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      # Falls du lokale LAN-Modelle testest:
+      TEST_TARGET_BASE_URL: "llm-r9700.am5.hergeth.cloud:8081/v1"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # 1. Python einrichten MIT Cache
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'  # Achte auf deine Version!
+          cache: 'pip'            # <--- WICHTIG: Aktiviert pip-Caching automatisch
+          cache-dependency-path: 'requirements.txt' # Optional: Nur neu laden, wenn requirements sich ändern
+
+      # 2. Installieren
+      # Der erste Run ist langsam (Download).
+      # Der zweite Run ist sehr schnell (nutzt den Cache auf dem Server).
+      - name: Install Dependencies
+        run: pip install deepeval pytest
+
+      # 3. Tests
+      - name: Run DeepEval Tests
+        run: |
+          pytest tests/ -v --tb=long --junitxml=test-results.xml
+          # Optional: DeepEval CLI exportieren, falls du das nutzt:
+          # deepeval test run tests/ --model gpt-4o-mini
