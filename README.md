@@ -122,6 +122,13 @@ llm:
 
 Im Open-WebUI-Dropdown erscheinen die Provider-Namen aus `llm.providers` (z. B. `anthropic-main`, `ollama-local`).
 
+## Production Build
+
+```bash
+./gradlew build
+java -jar build/libs/jchat-0.1-runner.jar
+```
+
 ## Bekannte Einschränkungen (bewusst offen gelassen)
 
 - **Kein Streaming**: Antworten kommen komplett auf einmal statt Token für Token.
@@ -133,3 +140,4 @@ Im Open-WebUI-Dropdown erscheinen die Provider-Namen aus `llm.providers` (z. B. 
   normalisiert sie und speichert sie im In-Memory-Store pro `conversation_id`.
 - **KnowledgeStore**: rein In-Memory, geht beim Neustart verloren.
   Optional im Request: `"conversation_id": "..."`.
+- **Token-Usage**: Immer als `0` gemeldet.

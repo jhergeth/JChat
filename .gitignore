@@ -39,6 +39,3 @@ application-local.yml
 ### Frontend ###
 frontend/node_modules/
 frontend/dist/
-/gradle/wrapper/gradle-wrapper.jar
-/gradlew
-/gradlew.bat
