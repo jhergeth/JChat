@@ -1,0 +1,7 @@
+name: anna-hamburg
+conversationId: test-anna-hamburg
+model: ollama-main
+description: Extraktion von Fakten zu Anna
+turns:
+  - "Meine Kollegin Anna wohnt in Hamburg und arbeitet bei ACME als Entwicklerin."
+  - "Fasse bitte kurz zusammen, was du über Anna weißt."
