@@ -1,0 +1,8 @@
+mustContain:
+  - subject: Anna
+    predicate: wohnt_in
+    object: Hamburg
+  - subject: Anna
+    predicate: arbeitet_bei
+    object: ACME
+minStatements: 2
