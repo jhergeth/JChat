@@ -89,6 +89,76 @@ API:
 - `GET /api/debug/knowledge-store?conversationId=default`
 - `GET /api/debug/traces?limit=20`
 
+## Szenarien (Integrationstest-Runner)
+
+JChat enthält einen einfachen Szenario-Runner, der YAML-definierte, mehrstufige Chat-Verläufe
+gegen eine laufende JChat-Instanz abspielt und nach jedem Turn den Knowledge Store als JSON speichert.
+Das ermöglicht automatisierte Integrationstests und das Erstellen von Golden-Files.
+
+- Zweck: Prüfen von Extraktion, Knowledge-Store-Verhalten und End-to-End-Responses.
+- Ort: Szenario-Dateien liegen im Ordner `scenarios/`.
+
+Format (Beispiel `scenarios/anna-hamburg.yaml`):
+
+```yaml
+name: anna-hamburg              # Dateiname ohne .yaml empfohlen
+conversationId: test-anna-hamburg
+model: ollama-main               # optional, kann überschreiben
+description: Extraktion von Fakten zu Anna
+turns:
+  - "Meine Kollegin Anna wohnt in Hamburg und arbeitet bei ACME als Entwicklerin."
+  - "Fasse bitte kurz zusammen, was du über Anna weißt."
+```
+
+Erwartungen (optional, für Validierung):
+- Lege eine Datei `anna-hamburg.expected.yaml` mit folgenden Feldern an:
+  - `mustContain`: Liste von Tripeln (subject, predicate, object) die im Knowledge Store erwartet werden.
+  - `minStatements`: Minimale Anzahl an Statements.
+
+Beispiel `scenarios/anna-hamburg.expected.yaml`:
+
+```yaml
+mustContain:
+  - subject: Anna
+    predicate: wohnt_in
+    object: Hamburg
+  - subject: Anna
+    predicate: arbeitet_bei
+    object: ACME
+minStatements: 2
+```
+
+Ausführen:
+
+1. JChat muss laufen (`./gradlew run`).
+2. Szenarien-Runner (verwendet `ScenarioRunnerMain`):
+
+```bash
+./gradlew runScenarios
+
+# Mit Validierung gegen *.expected.yaml:
+./gradlew runScenarios --args='--validate'
+
+# Andere Base-URL:
+./gradlew runScenarios --args='--base-url http://host:8080 --validate'
+```
+
+Output:
+
+Ergebnisse werden unter `build/scenario-runs/` abgelegt:
+
+- `summary.json` — Zusammenfassung aller Runs
+- `{name}.result.json` — Turns, Antworten, Store pro Turn
+- `{name}.store.json` — Finaler Knowledge Store
+
+Validierung:
+
+- `subject` und `predicate` werden nach Normalisierung (lowercase, Whitespace bereinigt) exakt verglichen.
+- `object`-Vergleich ist flexibel: case-insensitive Substring- oder umgekehrter Substring-Vergleich.
+- Wenn eine erwartete Bedingung nicht erfüllt ist, liefert der Runner Exit-Code 1 (geeignet für CI).
+
+Hinweis: Weitere Details zum Szenario-Format und zum Runner finden sich unter `src/main/java/name/hergeth/jchat/scenario/`.
+
 ## Mit Open WebUI verbinden
 
 In Open WebUI unter **Admin Settings → Connections → OpenAI**:
