@@ -37,6 +37,7 @@ public class ScenarioRunner {
         List<ScenarioDefinition> scenarios = ScenarioLoader.loadAll(scenariosDir);
         List<ScenarioRunResult> results = new ArrayList<>();
         for (ScenarioDefinition scenario : scenarios) {
+            System.out.printf("Running scenario %s (%s)...%n", scenario.name(), scenario.conversationId());
             results.add(run(scenario));
         }
         Path summaryFile = outputDir.resolve("summary.json");
@@ -52,6 +53,7 @@ public class ScenarioRunner {
             String userMessage = scenario.turns().get(i);
             history.add(new ChatMessage("user", userMessage));
 
+            System.out.printf("  turn %d/%d: %s%n", i + 1, scenario.turns().size(), truncate(userMessage, 80));
             String assistantResponse = client.chat(
                     scenario.model(), scenario.conversationId(), List.copyOf(history));
             history.add(new ChatMessage("assistant", assistantResponse));
@@ -128,5 +130,13 @@ public class ScenarioRunner {
 
     private static String formatTriple(TripleExpectation triple) {
         return triple.subject() + " | " + triple.predicate() + " | " + triple.object();
+    }
+
+    private static String truncate(String text, int maxLength) {
+        if (text == null) {
+            return "";
+        }
+        String oneLine = text.replace('\n', ' ').trim();
+        return oneLine.length() <= maxLength ? oneLine : oneLine.substring(0, maxLength) + "...";
     }
 }

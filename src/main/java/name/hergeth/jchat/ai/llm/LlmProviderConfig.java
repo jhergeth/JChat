@@ -12,6 +12,8 @@ public class LlmProviderConfig {
     private String modelName;
     private String baseUrl;
     private Integer numCtx;
+    private Integer timeoutSeconds;
+    private Integer maxRetries;
 
     public LlmProviderConfig(@Parameter String name) {
         this.name = name;
@@ -28,4 +30,8 @@ public class LlmProviderConfig {
     public void setBaseUrl(String baseUrl) { this.baseUrl = baseUrl; }
     public Integer getNumCtx() { return numCtx; }
     public void setNumCtx(Integer numCtx) { this.numCtx = numCtx; }
+    public Integer getTimeoutSeconds() { return timeoutSeconds; }
+    public void setTimeoutSeconds(Integer timeoutSeconds) { this.timeoutSeconds = timeoutSeconds; }
+    public Integer getMaxRetries() { return maxRetries; }
+    public void setMaxRetries(Integer maxRetries) { this.maxRetries = maxRetries; }
 }

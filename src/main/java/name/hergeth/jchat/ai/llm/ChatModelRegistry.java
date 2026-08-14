@@ -4,10 +4,12 @@ import dev.langchain4j.model.anthropic.AnthropicChatModel;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import io.micronaut.context.annotation.Value;
 import jakarta.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,8 +20,15 @@ public class ChatModelRegistry {
     private static final Logger LOG = LoggerFactory.getLogger(ChatModelRegistry.class);
 
     private final Map<String, ChatLanguageModel> models = new HashMap<>();
+    private final int defaultTimeoutSeconds;
+    private final int defaultMaxRetries;
 
-    public ChatModelRegistry(List<LlmProviderConfig> configs) {
+    public ChatModelRegistry(
+            List<LlmProviderConfig> configs,
+            @Value("${llm.default-timeout-seconds:120}") int defaultTimeoutSeconds,
+            @Value("${llm.default-max-retries:0}") int defaultMaxRetries) {
+        this.defaultTimeoutSeconds = defaultTimeoutSeconds;
+        this.defaultMaxRetries = defaultMaxRetries;
         for (LlmProviderConfig config : configs) {
             if (!isConfigured(config)) {
                 LOG.warn("Skipping unconfigured provider: {}", config.getName());
@@ -50,14 +59,22 @@ public class ChatModelRegistry {
                     .apiKey(config.getApiKey())
                     .modelName(config.getModelName())
                     .build();
-            case "openai" -> OpenAiChatModel.builder()
-                    .apiKey(config.getApiKey())
-                    .modelName(config.getModelName())
-                    .build();
+            case "openai" -> {
+                var builder = OpenAiChatModel.builder()
+                        .apiKey(config.getApiKey())
+                        .modelName(config.getModelName())
+                        .timeout(Duration.ofSeconds(timeoutSeconds(config)))
+                        .maxRetries(maxRetries(config));
+                if (config.getBaseUrl() != null && !config.getBaseUrl().isBlank()) {
+                    builder.baseUrl(config.getBaseUrl());
+                }
+                yield builder.build();
+            }
             case "ollama" -> {
                 var builder = OllamaChatModel.builder()
                         .baseUrl(config.getBaseUrl())
-                        .modelName(config.getModelName());
+                        .modelName(config.getModelName())
+                        .timeout(Duration.ofSeconds(timeoutSeconds(config)));
                 if (config.getNumCtx() != null) {
                     builder.numCtx(config.getNumCtx());
                 }
@@ -82,5 +99,13 @@ public class ChatModelRegistry {
 
     public List<String> names() {
         return List.copyOf(models.keySet());
+    }
+
+    private int timeoutSeconds(LlmProviderConfig config) {
+        return config.getTimeoutSeconds() != null ? config.getTimeoutSeconds() : defaultTimeoutSeconds;
+    }
+
+    private int maxRetries(LlmProviderConfig config) {
+        return config.getMaxRetries() != null ? config.getMaxRetries() : defaultMaxRetries;
     }
 }

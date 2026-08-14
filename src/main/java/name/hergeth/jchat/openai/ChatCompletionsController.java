@@ -84,6 +84,7 @@ public class ChatCompletionsController {
             LOG.debug("Meta-request ({}) — skipping knowledge store and extraction", requestType);
         }
 
+        LOG.info("Chat completion for conversation {} via {} (type={})", conversationId, provider, requestType);
         String answer = aiServiceFactory.chat(provider, messages);
 
         if (isChat) {
@@ -119,7 +120,7 @@ public class ChatCompletionsController {
                 return "ollama-extract";
             }
         }
-        if (modelRegistry.has(request.model())) {
+        if (request.model() != null && modelRegistry.has(request.model())) {
             return request.model();
         }
         return taskRouter.providerFor("chat");
