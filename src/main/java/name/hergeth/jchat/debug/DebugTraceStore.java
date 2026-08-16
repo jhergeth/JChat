@@ -21,6 +21,16 @@ public class DebugTraceStore {
         }
     }
 
+    public boolean replace(TurnDebugSnapshot snapshot) {
+        for (int i = 0; i < traces.size(); i++) {
+            if (snapshot.id().equals(traces.get(i).id())) {
+                traces.set(i, snapshot);
+                return true;
+            }
+        }
+        return false;
+    }
+
     public Optional<TurnDebugSnapshot> findById(String id) {
         if (id == null || id.isBlank()) {
             return Optional.empty();

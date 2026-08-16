@@ -8,6 +8,7 @@ import name.hergeth.jchat.openai.dto.ChatMessage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,8 +56,10 @@ public class ScenarioRunner {
 
             System.out.printf("  turn %d/%d: %s%n", i + 1, scenario.turns().size(), truncate(userMessage, 80));
             String assistantResponse = client.chat(
-                    scenario.model(), scenario.conversationId(), List.copyOf(history));
+                    scenario.conversationId(), List.copyOf(history));
             history.add(new ChatMessage("assistant", assistantResponse));
+
+            client.waitForBackgroundLlmTasks(Duration.ofMinutes(3));
 
             List<StatementSnapshot> store = client.knowledgeStore(scenario.conversationId());
             turnResults.add(new ScenarioTurnResult(i, userMessage, assistantResponse, store));

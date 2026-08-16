@@ -12,8 +12,10 @@ public record TurnDebugSnapshot(
         String requestType,
         String userInput,
         List<String> retrievedContext,
+        AmbientContextView ambientContext,
         List<PromptLine> prompt,
         String llmResponse,
         String chatProvider,
+        SearchTraceView searchTrace,
         List<StatementView> knowledgeStore
 ) {}

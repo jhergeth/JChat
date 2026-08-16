@@ -15,10 +15,25 @@ jackson:
 app:
   system-prompt-path: system-prompt.txt
   extraction-prompt-path: extraction-prompt.txt
+  search-plan-prompt-path: search-plan-prompt.txt
+  search-extraction-prompt-path: search-extraction-prompt.txt
   context:
     recent-turns: 3
+    default-timezone: Europe/Berlin
+    default-locale: de-DE
   retriever:
     max-statements: 12
+  search:
+    enabled: true
+    max-results: 5
+    max-triples: 6
+    xnsearch:
+      base-url: ${XNSEARCH_URL:}
+      max-pages: 5
+      page-size: 10
+    wikipedia:
+      lang: de
+      enabled: true
 
 llm:
   default-timeout-seconds: 120
@@ -52,22 +67,47 @@ llm:
 #      type: openai
 #      api-key: ${OPENAI_API_KEY}
 #      model-name: gpt-4o
-    ollama-main:
-      type: ollama
-      base-url: http://am5:11434
-      model-name: llama3.1:8b
-    ollama-extract:
-      type: ollama
-      base-url: http://am5:11435
-      model-name: qwen2.5:7b
-      num-ctx: 4096
+    llama-json:
+      type: bifrost
+      api-type: openai
+      api-key: ${BIFROST_VIRTUAL_KEY}
+      base-url: https://llms.am5.hergeth.cloud/v1
+      model-name: llama-p100/json-fast
+      disable-reasoning: true
+      max-output-tokens: 1024
+    llama-chat-fast:
+      type: bifrost
+      api-type: openai
+      api-key: ${BIFROST_VIRTUAL_KEY}
+      base-url: https://llms.am5.hergeth.cloud/v1
+      model-name: llama-p100/chat-main
+    llama-agentic-coder:
+      type: bifrost
+      api-type: openai
+      api-key: ${BIFROST_VIRTUAL_KEY}
+      base-url: https://llms.am5.hergeth.cloud/v1
+      model-name: llama-r9700/coder-agentic
+    llama-agentic-reasoning:
+      type: bifrost
+      api-type: openai
+      api-key: ${BIFROST_VIRTUAL_KEY}
+      base-url: https://llms.am5.hergeth.cloud/v1
+      model-name: llama-r9700/reasoning-agentic
+      max-output-tokens: 4096
+
 
   tasks:
     chat:
-      provider: or-lightning
+      provider: llama-agentic-reasoning
     extraction:
-      provider: ollama-extract
+      provider: llama-json
     meta:
-      provider: ollama-extract
+      provider: llama-json
+    search-plan:
+      provider: llama-json
+    search-extract:
+      provider: llama-json
+    check:
+      provider: or-lightning
     default:
-      provider: or-ultra
+      provider: llama-chat-fast

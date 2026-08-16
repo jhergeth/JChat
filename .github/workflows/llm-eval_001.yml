@@ -18,8 +18,8 @@ jobs:
     
     env:
       # OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-      # Falls du lokale LAN-Modelle testest:
-      TEST_TARGET_BASE_URL: "llm-r9700.am5.hergeth.cloud:8081/v1"
+      # Test-Target (Lokales LLM)
+      LLM_TARGET_URL: "https://llm-r9700.am5.hergeth.cloud:8081/v1"
 
     steps:
       - uses: actions/checkout@v4
@@ -30,17 +30,13 @@ jobs:
         with:
           python-version: '3.11'  # Achte auf deine Version!
           cache: 'pip'            # <--- WICHTIG: Aktiviert pip-Caching automatisch
-          cache-dependency-path: 'requirements.txt' # Optional: Nur neu laden, wenn requirements sich ändern
+          cache-dependency-path: 'llm-tests/requirements.txt' # Pfad korrigiert
 
-      # 2. Installieren
-      # Der erste Run ist langsam (Download).
-      # Der zweite Run ist sehr schnell (nutzt den Cache auf dem Server).
       - name: Install Dependencies
-        run: pip install deepeval pytest
+        run: pip install -r llm-tests/requirements.txt
 
-      # 3. Tests
       - name: Run DeepEval Tests
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          pytest tests/ -v --tb=long --junitxml=test-results.xml
-          # Optional: DeepEval CLI exportieren, falls du das nutzt:
-          # deepeval test run tests/ --model gpt-4o-mini
+          pytest llm-tests/ -v --tb=long --junitxml=test-results.xml

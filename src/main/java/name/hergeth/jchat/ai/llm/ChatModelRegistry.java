@@ -20,6 +20,7 @@ public class ChatModelRegistry {
     private static final Logger LOG = LoggerFactory.getLogger(ChatModelRegistry.class);
 
     private final Map<String, ChatLanguageModel> models = new HashMap<>();
+    private final Map<String, Boolean> disableReasoningByProvider = new HashMap<>();
     private final int defaultTimeoutSeconds;
     private final int defaultMaxRetries;
 
@@ -35,6 +36,9 @@ public class ChatModelRegistry {
                 continue;
             }
             models.put(config.getName(), build(config));
+            if (Boolean.TRUE.equals(config.getDisableReasoning())) {
+                disableReasoningByProvider.put(config.getName(), true);
+            }
         }
         if (models.isEmpty()) {
             throw new IllegalStateException("No LLM providers configured");
@@ -45,8 +49,16 @@ public class ChatModelRegistry {
         return switch (config.getType()) {
             case "ollama" -> config.getBaseUrl() != null && !config.getBaseUrl().isBlank();
             case "anthropic", "openai" -> hasApiKey(config.getApiKey());
+            case "bifrost" -> hasApiKey(config.getApiKey())
+                    && hasText(config.getBaseUrl())
+                    && hasText(config.getModelName())
+                    && hasText(config.getApiType());
             default -> false;
         };
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     private boolean hasApiKey(String apiKey) {
@@ -68,6 +80,7 @@ public class ChatModelRegistry {
                 if (config.getBaseUrl() != null && !config.getBaseUrl().isBlank()) {
                     builder.baseUrl(config.getBaseUrl());
                 }
+                applyMaxOutputTokens(builder, config);
                 yield builder.build();
             }
             case "ollama" -> {
@@ -80,8 +93,36 @@ public class ChatModelRegistry {
                 }
                 yield builder.build();
             }
+            case "bifrost" -> buildBifrost(config);
             default -> throw new IllegalArgumentException(
                     "Unbekannter Provider-Typ: " + config.getType());
+        };
+    }
+
+    private ChatLanguageModel buildBifrost(LlmProviderConfig config) {
+        String apiType = config.getApiType();
+        if (!hasText(apiType)) {
+            throw new IllegalArgumentException(
+                    "Bifrost-Provider '" + config.getName() + "' benötigt api-type");
+        }
+        return switch (apiType) {
+            case "openai" -> {
+                var builder = OpenAiChatModel.builder()
+                        .apiKey("unused")
+                        .baseUrl(config.getBaseUrl())
+                        .modelName(config.getModelName())
+                        .timeout(Duration.ofSeconds(timeoutSeconds(config)))
+                        .maxRetries(maxRetries(config))
+                        .customHeaders(Map.of("x-bf-vk", config.getApiKey()));
+                if (Boolean.TRUE.equals(config.getDisableReasoning())) {
+                    builder.temperature(0.0);
+                }
+                applyMaxOutputTokens(builder, config);
+                yield builder.build();
+            }
+            default -> throw new IllegalArgumentException(
+                    "Unbekannter Bifrost api-type '" + apiType + "' für Provider '"
+                            + config.getName() + "'. Unterstützt: openai");
         };
     }
 
@@ -97,6 +138,10 @@ public class ChatModelRegistry {
         return models.containsKey(providerName);
     }
 
+    public boolean disableReasoning(String providerName) {
+        return disableReasoningByProvider.getOrDefault(providerName, false);
+    }
+
     public List<String> names() {
         return List.copyOf(models.keySet());
     }
@@ -107,5 +152,14 @@ public class ChatModelRegistry {
 
     private int maxRetries(LlmProviderConfig config) {
         return config.getMaxRetries() != null ? config.getMaxRetries() : defaultMaxRetries;
+    }
+
+    private static void applyMaxOutputTokens(
+            dev.langchain4j.model.openai.OpenAiChatModel.OpenAiChatModelBuilder builder,
+            LlmProviderConfig config) {
+        Integer maxTokens = config.getMaxOutputTokens();
+        if (maxTokens != null && maxTokens > 0) {
+            builder.maxTokens(maxTokens);
+        }
     }
 }

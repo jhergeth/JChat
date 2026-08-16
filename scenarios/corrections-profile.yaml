@@ -1,6 +1,5 @@
 name: corrections-profile
 conversationId: scenario-corrections-profile
-model: ollama-main
 description: Profil mit Korrekturen — Wohnort, Auto und Arbeitgeber werden korrigiert
 turns:
   - "Ich heisse Maria Schmidt, wohne in Muenchen und mein Hobby ist Klettern."

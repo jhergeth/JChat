@@ -11,9 +11,13 @@ import java.util.List;
 public class StatementParser {
 
     public List<Statement> parse(String llmOutput, Turn turn) {
+        return parse(llmOutput, turn.conversationId(), turn.turnId(), turn.timestamp());
+    }
+
+    public List<Statement> parse(String llmOutput, String conversationId, String turnId, java.time.Instant createdAt) {
         List<Statement> statements = new ArrayList<>();
         for (String line : llmOutput.split("\n")) {
-            Statement statement = parseLine(line, turn);
+            Statement statement = parseLine(line, conversationId, turnId, createdAt);
             if (statement != null) {
                 statements.add(statement);
             }
@@ -21,7 +25,7 @@ public class StatementParser {
         return statements;
     }
 
-    private Statement parseLine(String line, Turn turn) {
+    private Statement parseLine(String line, String conversationId, String turnId, java.time.Instant createdAt) {
         String trimmed = line.trim();
         if (trimmed.isEmpty() || trimmed.startsWith("#")) {
             return null;
@@ -36,8 +40,8 @@ public class StatementParser {
                 parts[0].trim(),
                 parts[1].trim(),
                 parts[2].trim(),
-                turn.conversationId(),
-                turn.turnId(),
-                turn.timestamp());
+                conversationId,
+                turnId,
+                createdAt);
     }
 }

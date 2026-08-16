@@ -1,0 +1,4 @@
+pytest
+deepeval
+pytest-deepeval
+requests

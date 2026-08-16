@@ -28,7 +28,22 @@ const visibleTraces = computed(() =>
 )
 
 const retrievedContext = computed(() => snapshot.value?.retrievedContext ?? [])
+const searchTrace = computed(() => snapshot.value?.searchTrace ?? null)
 const prompt = computed(() => snapshot.value?.prompt ?? [])
+
+const searchHistory = computed(() =>
+  traces.value
+    .filter(t => t.searchTrace?.searched)
+    .map(t => ({
+      id: t.id,
+      timestamp: t.timestamp,
+      userInput: t.userInput,
+      query: t.searchTrace.query,
+      status: t.searchTrace.status,
+      snippetCount: t.searchTrace.snippetCount,
+      tripleCount: t.searchTrace.extractedTriples?.length ?? 0,
+    }))
+)
 
 const requestTypeLabel = {
   chat: 'Chat',
@@ -183,6 +198,7 @@ function badgeClass(type) {
         >
           <span class="trace-time">{{ formatTime(trace.timestamp) }}</span>
           <span :class="badgeClass(trace.requestType)">{{ requestTypeLabel[trace.requestType] ?? trace.requestType }}</span>
+          <span v-if="trace.searchTrace?.searched" class="badge badge-search" title="Websuche">🔍</span>
           <span class="trace-preview">{{ previewInput(trace.userInput) }}</span>
         </button>
       </aside>
@@ -195,11 +211,72 @@ function badgeClass(type) {
         </section>
 
         <section class="panel">
+          <h2>Aktueller Kontext</h2>
+          <template v-if="snapshot?.ambientContext">
+            <p><strong>Datum/Uhrzeit:</strong> {{ snapshot.ambientContext.localDateTime }} ({{ snapshot.ambientContext.timezone }})</p>
+            <p><strong>Tageszeit:</strong> {{ snapshot.ambientContext.dayPhase }}</p>
+            <p><strong>Locale:</strong> {{ snapshot.ambientContext.locale || '—' }}</p>
+            <p><strong>Vermutetes Land:</strong> {{ snapshot.ambientContext.country }}</p>
+          </template>
+          <p v-else class="empty">Kein Session-Kontext für diesen Turn.</p>
+        </section>
+
+        <section class="panel">
           <h2>Kontext (Retriever)</h2>
           <ul v-if="retrievedContext.length">
             <li v-for="(line, i) in retrievedContext" :key="i"><code>{{ line }}</code></li>
           </ul>
           <p v-else class="empty">Kein retrieved Context für diesen Turn.</p>
+        </section>
+
+        <section class="panel">
+          <h2>Websuche-Historie</h2>
+          <p v-if="!searchHistory.length" class="empty">Noch keine Websuchen in dieser Conversation.</p>
+          <ul v-else class="search-history">
+            <li v-for="entry in searchHistory" :key="entry.id">
+              <button type="button" class="search-history-item" @click="selectTrace(traces.find(t => t.id === entry.id))">
+                <span class="trace-time">{{ formatTime(entry.timestamp) }}</span>
+                <code>{{ entry.query }}</code>
+                <span class="search-meta">{{ entry.status }} · {{ entry.snippetCount }} Snippets · {{ entry.tripleCount }} Triples</span>
+              </button>
+            </li>
+          </ul>
+        </section>
+
+        <section class="panel">
+          <h2>Web-Suche (aktueller Turn)</h2>
+          <template v-if="searchTrace?.searched">
+            <p><strong>Status:</strong> {{ searchTrace.status }} — {{ searchTrace.detail }}</p>
+            <p><strong>Query:</strong> <code>{{ searchTrace.query }}</code></p>
+            <p><strong>Snippets:</strong> {{ searchTrace.snippetCount }}</p>
+            <p v-if="searchTrace.promptContext"><strong>Prompt-Kontext:</strong></p>
+            <pre v-if="searchTrace.promptContext" class="text-block">{{ searchTrace.promptContext }}</pre>
+            <div v-if="searchTrace.snippets?.length" class="snippet-list">
+              <article v-for="(snippet, i) in searchTrace.snippets" :key="'s' + i" class="snippet-card">
+                <h3>{{ snippet.title || `Treffer ${i + 1}` }}</h3>
+                <a v-if="snippet.url" :href="snippet.url" target="_blank" rel="noopener">{{ snippet.url }}</a>
+                <pre class="text-block snippet-preview">{{ snippet.text }}</pre>
+              </article>
+            </div>
+            <p v-else class="empty">Keine Snippet-Details verfügbar.</p>
+            <template v-if="searchTrace.extractedTriples?.length">
+              <p><strong>Extrahierte Triples:</strong></p>
+              <ul>
+                <li v-for="(line, i) in searchTrace.extractedTriples" :key="i"><code>{{ line }}</code></li>
+              </ul>
+            </template>
+            <p v-else-if="searchTrace?.detail?.includes('folgt nach')" class="search-hint">
+              Triple-Extraktion läuft im Hintergrund (nach der Antwort) — Auto-Refresh zeigt sie gleich.
+            </p>
+            <p v-else-if="searchTrace?.promptContext" class="search-hint">
+              Keine RDF-Triples — die Recherche wurde als Textauszüge in den System-Prompt übernommen (siehe „Prompt-Kontext“).
+            </p>
+            <p v-else class="empty">Keine Triples aus Snippets extrahiert.</p>
+          </template>
+          <template v-else-if="searchTrace">
+            <p class="search-status"><strong>{{ searchTrace.status }}:</strong> {{ searchTrace.detail }}</p>
+          </template>
+          <p v-else class="empty">Keine Websuche für diesen Turn.</p>
         </section>
 
         <section class="panel">
@@ -395,6 +472,73 @@ function badgeClass(type) {
 .badge-meta {
   background: #f3e8ff;
   color: #6b21a8;
+}
+
+.badge-search {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.search-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.search-history-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  width: 100%;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid #e4e4e7;
+  border-radius: 6px;
+  background: #fafafa;
+  cursor: pointer;
+  text-align: left;
+}
+
+.search-history-item:hover {
+  background: #eff6ff;
+}
+
+.search-meta {
+  font-size: 0.75rem;
+  color: #71717a;
+}
+
+.snippet-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0.75rem 0;
+}
+
+.snippet-card {
+  border: 1px solid #e4e4e7;
+  border-radius: 8px;
+  padding: 0.75rem;
+  background: #fafafa;
+}
+
+.snippet-card h3 {
+  margin: 0 0 0.25rem;
+  font-size: 0.9375rem;
+}
+
+.snippet-card a {
+  font-size: 0.75rem;
+  color: #2563eb;
+  word-break: break-all;
+}
+
+.snippet-preview {
+  margin-top: 0.5rem;
+  max-height: 12rem;
+  overflow-y: auto;
+  font-size: 0.8125rem;
 }
 
 .content {

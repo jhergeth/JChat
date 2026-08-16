@@ -44,10 +44,9 @@ public final class ScenarioLoader {
         Map<String, Object> root = loadMap(file);
         String name = requiredString(root, "name", file);
         String conversationId = optionalString(root, "conversationId");
-        String model = optionalString(root, "model");
         String description = optionalString(root, "description");
         List<String> turns = requiredStringList(root, "turns", file);
-        return new ScenarioDefinition(name, conversationId, model, description, turns);
+        return new ScenarioDefinition(name, conversationId, description, turns);
     }
 
     public static Optional<ScenarioExpected> loadExpected(Path scenarioFile) throws IOException {

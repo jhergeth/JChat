@@ -22,7 +22,7 @@ final class StatementRelevanceScorer {
         }
 
         List<ScoredStatement> scored = statements.stream()
-                .map(statement -> new ScoredStatement(statement, score(statement, terms)))
+                .map(statement -> new ScoredStatement(statement, score(statement, terms, query)))
                 .sorted(Comparator
                         .comparingInt(ScoredStatement::score).reversed()
                         .thenComparing(s -> s.statement().createdAt(), Comparator.reverseOrder()))
@@ -39,7 +39,7 @@ final class StatementRelevanceScorer {
                 : relevant;
     }
 
-    private static int score(Statement statement, Set<String> terms) {
+    private static int score(Statement statement, Set<String> terms, String query) {
         String subject = normalize(statement.subject());
         String predicate = normalize(statement.predicate());
         String object = normalize(statement.object());
@@ -55,7 +55,40 @@ final class StatementRelevanceScorer {
                 total += 2;
             }
         }
-        return total;
+        total -= countryMismatchPenalty(query, subject, predicate, object);
+        return Math.max(0, total);
+    }
+
+    private static int countryMismatchPenalty(String query, String subject, String predicate, String object) {
+        String q = query.toLowerCase(Locale.ROOT);
+        String combined = subject + " " + predicate + " " + object;
+        if (mentionsUsa(q) && mentionsGermany(combined) && !mentionsUsa(combined)) {
+            return 12;
+        }
+        if (mentionsAustria(q) && mentionsGermany(combined) && !mentionsAustria(combined)) {
+            return 12;
+        }
+        if (mentionsGermany(q) && mentionsUsa(combined) && !mentionsGermany(combined)) {
+            return 12;
+        }
+        return 0;
+    }
+
+    private static boolean mentionsUsa(String text) {
+        return text.contains("usa")
+                || text.contains("vereinigten staaten")
+                || text.contains("vereinigte staaten")
+                || text.contains("amerika");
+    }
+
+    private static boolean mentionsAustria(String text) {
+        return text.contains("österreich") || text.contains("oesterreich");
+    }
+
+    private static boolean mentionsGermany(String text) {
+        return text.contains("deutschland")
+                || text.contains("bundesrepublik deutschland")
+                || text.contains(" merz");
     }
 
     private static List<Statement> recentStatements(List<Statement> statements, int maxResults) {

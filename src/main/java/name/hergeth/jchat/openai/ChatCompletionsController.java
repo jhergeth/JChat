@@ -6,19 +6,29 @@ import name.hergeth.jchat.ai.Retriever;
 import name.hergeth.jchat.ai.SystemPromptProvider;
 import name.hergeth.jchat.ai.TurnFactory;
 import name.hergeth.jchat.ai.TurnProcessor;
+import name.hergeth.jchat.ai.context.AmbientContext;
+import name.hergeth.jchat.ai.context.SessionContextHints;
+import name.hergeth.jchat.ai.context.SessionContextResolver;
 import name.hergeth.jchat.ai.llm.AiServiceFactory;
 import name.hergeth.jchat.ai.llm.ChatModelRegistry;
 import name.hergeth.jchat.ai.llm.TaskRouter;
+import name.hergeth.jchat.ai.llm.LlmResponseException;
+import name.hergeth.jchat.ai.search.SearchOrchestrator;
+import name.hergeth.jchat.ai.search.SearchPostProcessor;
+import name.hergeth.jchat.ai.search.SearchTrace;
 import name.hergeth.jchat.debug.DebugTraceService;
 import name.hergeth.jchat.openai.dto.ChatCompletionRequest;
 import name.hergeth.jchat.openai.dto.ChatCompletionResponse;
 import name.hergeth.jchat.openai.dto.ChatMessage;
 import name.hergeth.jchat.openai.dto.Choice;
 import name.hergeth.jchat.openai.dto.Usage;
+import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
+import io.micronaut.http.annotation.Header;
 import io.micronaut.http.annotation.Post;
+import io.micronaut.http.exceptions.HttpStatusException;
 import jakarta.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,13 +68,35 @@ public class ChatCompletionsController {
     @Inject
     DebugTraceService debugTraceService;
 
+    @Inject
+    SearchOrchestrator searchOrchestrator;
+
+    @Inject
+    SearchPostProcessor searchPostProcessor;
+
+    @Inject
+    SessionContextResolver sessionContextResolver;
+
     @Post("/chat/completions")
-    public ChatCompletionResponse chatCompletions(@Body ChatCompletionRequest request) {
+    public ChatCompletionResponse chatCompletions(
+            @Body ChatCompletionRequest request,
+            @Header(value = "Accept-Language", defaultValue = "") String acceptLanguage,
+            @Header(value = "X-Timezone", defaultValue = "") String timezoneHeader) {
+
+        SessionContextHints contextHints = SessionContextHints.fromHeadersAndMetadata(
+                acceptLanguage, timezoneHeader, request.metadata());
+        AmbientContext ambientContext = sessionContextResolver.resolve(contextHints);
 
         String conversationId = ConversationIds.resolve(request.conversationId());
         String lastUserMessage = lastUserMessage(request);
         String requestType = RequestClassifier.classify(lastUserMessage);
         boolean isChat = RequestClassifier.isChat(requestType);
+
+        SearchTrace searchTrace = SearchTrace.disabled("kein Chat-Request");
+        if (isChat) {
+            searchTrace = searchOrchestrator.maybeSearch(
+                    conversationId, lastUserMessage, request.messages(), ambientContext);
+        }
 
         List<name.hergeth.jchat.ai.model.Statement> retrievedStatements = isChat
                 ? retriever.retrieve(conversationId, lastUserMessage)
@@ -75,7 +107,12 @@ public class ChatCompletionsController {
                 .toList();
 
         List<ChatMessage> messages = isChat
-                ? promptBuilder.build(request.messages(), systemPromptProvider.get(), retrievedStatements)
+                ? promptBuilder.build(
+                        request.messages(),
+                        systemPromptProvider.get(),
+                        retrievedStatements,
+                        searchTrace.promptContext(),
+                        ambientContext)
                 : MetaRequestMessages.passthrough(request.messages());
 
         String provider = resolveProvider(request, isChat);
@@ -85,18 +122,28 @@ public class ChatCompletionsController {
         }
 
         LOG.info("Chat completion for conversation {} via {} (type={})", conversationId, provider, requestType);
-        String answer = aiServiceFactory.chat(provider, messages);
-
-        if (isChat) {
-            try {
-                turnProcessor.process(TurnFactory.fromExchange(conversationId, request.messages(), answer));
-            } catch (Exception e) {
-                LOG.warn("Statement extraction failed for conversation {}", conversationId, e);
-            }
+        String answer;
+        try {
+            answer = aiServiceFactory.chat(provider, messages);
+        } catch (LlmResponseException e) {
+            LOG.error("LLM returned no usable text for conversation {} via {}: {}",
+                    conversationId, provider, e.getMessage());
+            throw new HttpStatusException(HttpStatus.BAD_GATEWAY, e.getMessage());
         }
 
-        debugTraceService.record(
-                conversationId, requestType, lastUserMessage, retrievedContext, messages, answer, provider);
+        if (isChat) {
+            turnProcessor.scheduleProcess(
+                    TurnFactory.fromExchange(conversationId, request.messages(), answer));
+        }
+
+        String debugTraceId = debugTraceService.record(
+                conversationId, requestType, lastUserMessage, retrievedContext, ambientContext,
+                messages, answer, provider, searchTrace);
+
+        if (isChat) {
+            searchPostProcessor.scheduleAfterAnswer(
+                    conversationId, lastUserMessage, answer, provider, searchTrace, debugTraceId);
+        }
 
         ChatMessage responseMessage = new ChatMessage("assistant", answer);
         Choice choice = new Choice(0, responseMessage, "stop");

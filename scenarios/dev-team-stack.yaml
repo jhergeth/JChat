@@ -1,6 +1,5 @@
 name: dev-team-stack
 conversationId: scenario-dev-team-stack
-model: ollama-main
 description: Entwicklerteam, Projekt StackOverflow-Klon, Technologien und Deployment
 turns:
   - "Ich heisse Lukas Mueller, wohne in Berlin und bin Backend-Entwickler bei DataForge GmbH."

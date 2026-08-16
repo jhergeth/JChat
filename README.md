@@ -103,7 +103,6 @@ Format (Beispiel `scenarios/anna-hamburg.yaml`):
 ```yaml
 name: anna-hamburg              # Dateiname ohne .yaml empfohlen
 conversationId: test-anna-hamburg
-model: ollama-main               # optional, kann überschreiben
 description: Extraktion von Fakten zu Anna
 turns:
   - "Meine Kollegin Anna wohnt in Hamburg und arbeitet bei ACME als Entwicklerin."
@@ -188,6 +187,7 @@ llm:
 |-------------|-------------------|-------------------------------------|
 | `chat`      | ollama-main       | Haupt-Chat (LLM_GROSS)              |
 | `extraction`| ollama-fast       | Triple-Extraktion nach jedem Turn   |
+| `check`     | or-lightning      | Referenz-Antwort für Szenarien / Golden Files |
 | `default`   | ollama-main       | Fallback                            |
 
 Im Open-WebUI-Dropdown erscheinen die Provider-Namen aus `llm.providers` (z. B. `anthropic-main`, `ollama-local`).
@@ -206,6 +206,7 @@ java -jar build/libs/jchat-0.1-runner.jar
   auch ohne, wirkt aber weniger „flüssig“.
 - **Retriever**: keyword-basiert — relevante Triples aus dem Knowledge Store (Schritt 3).
 - **Prompt**: letzte `app.context.recent-turns` Turns als Klartext + retrieved Wissen im System-Prompt.
+- **Websuche**: xnsearch (optional) + Wikipedia-Fallback — Snippets werden per LLM zu Triples komprimiert.
 - **Extraktion**: Nach jedem Turn ruft `ollama-fast` Triples ab (`subject | predicate | object`),
   normalisiert sie und speichert sie im In-Memory-Store pro `conversation_id`.
 - **KnowledgeStore**: rein In-Memory, geht beim Neustart verloren.

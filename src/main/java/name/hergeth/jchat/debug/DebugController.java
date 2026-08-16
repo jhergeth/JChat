@@ -4,6 +4,7 @@ import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.QueryValue;
 import jakarta.inject.Inject;
+import name.hergeth.jchat.ai.llm.BackgroundLlmExecutor;
 
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,9 @@ public class DebugController {
 
     @Inject
     DebugTraceService debugTraceService;
+
+    @Inject
+    BackgroundLlmExecutor backgroundLlmExecutor;
 
     @Get("/latest")
     public Optional<TurnDebugSnapshot> latest(
@@ -45,5 +49,10 @@ public class DebugController {
         return Map.of(
                 "conversationId", conversationId,
                 "statements", debugTraceService.knowledgeStore(conversationId));
+    }
+
+    @Get("/pending-llm-tasks")
+    public Map<String, Object> pendingLlmTasks() {
+        return Map.of("pending", backgroundLlmExecutor.pendingCount());
     }
 }

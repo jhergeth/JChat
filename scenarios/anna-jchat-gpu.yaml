@@ -1,6 +1,5 @@
 name: anna-jchat-gpu
 conversationId: scenario-anna-jchat-gpu
-model: ollama-main
 description: Anna, JChat, AM5 und Nvidia P100 — Regression aus manuellem Test
 turns:
   - "Ich heisse Anna, arbeite bei Acme GmbH in Hamburg und meine Lieblingsfarbe ist grün."

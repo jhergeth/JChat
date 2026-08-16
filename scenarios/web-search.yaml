@@ -1,0 +1,7 @@
+name: web-search
+conversationId: scenario-web-search
+description: Faktenfrage mit Websuche (Wikipedia, optional xnsearch)
+turns:
+  - "Was ist die Hauptstadt von Australien?"
+  - "Und wie viele Einwohner hat diese Stadt ungefaehr?"
+  - "Danke — merke dir, dass ich gerade Geographie lerne."

@@ -1,0 +1,5 @@
+mustContain:
+  - subject: Canberra
+    predicate: ist_hauptstadt_von
+    object: Australien
+minStatements: 1

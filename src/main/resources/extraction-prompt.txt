@@ -1,4 +1,5 @@
 Extrahiere aus dem folgenden Gespraechs-Turn die wichtigsten Fakten als RDF-Triples.
+Direktmodus: sofort Triples ausgeben — kein Reasoning, keine Erklaerungen.
 Antworte NUR mit einer Zeile pro Triple im Format:
 
 subject | predicate | object

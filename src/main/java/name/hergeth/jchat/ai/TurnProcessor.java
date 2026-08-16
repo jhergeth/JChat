@@ -2,6 +2,7 @@ package name.hergeth.jchat.ai;
 
 import name.hergeth.jchat.ai.model.Statement;
 import name.hergeth.jchat.ai.model.Turn;
+import name.hergeth.jchat.ai.llm.BackgroundLlmExecutor;
 import jakarta.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,15 +17,24 @@ public class TurnProcessor {
 
     private final StatementExtractor statementExtractor;
     private final StatementNormalizer statementNormalizer;
-    private final KnowledgeStore knowledgeStore;
+    private final KnowledgeStoreWriter knowledgeStoreWriter;
+    private final BackgroundLlmExecutor backgroundLlmExecutor;
 
     public TurnProcessor(
             StatementExtractor statementExtractor,
             StatementNormalizer statementNormalizer,
-            KnowledgeStore knowledgeStore) {
+            KnowledgeStoreWriter knowledgeStoreWriter,
+            BackgroundLlmExecutor backgroundLlmExecutor) {
         this.statementExtractor = statementExtractor;
         this.statementNormalizer = statementNormalizer;
-        this.knowledgeStore = knowledgeStore;
+        this.knowledgeStoreWriter = knowledgeStoreWriter;
+        this.backgroundLlmExecutor = backgroundLlmExecutor;
+    }
+
+    public void scheduleProcess(Turn turn) {
+        backgroundLlmExecutor.run(
+                "extraction:" + turn.conversationId(),
+                () -> process(turn));
     }
 
     public void process(Turn turn) {
@@ -42,24 +52,10 @@ public class TurnProcessor {
             return;
         }
 
-        List<Statement> merged = merge(knowledgeStore.all(turn.conversationId()), normalized);
-        List<Statement> toStore = merged.stream().limit(MAX_STATEMENTS).toList();
-        knowledgeStore.replaceAll(turn.conversationId(), toStore);
+        knowledgeStoreWriter.merge(turn.conversationId(), normalized, MAX_STATEMENTS);
 
-        LOG.info("Knowledge store updated for {}: raw={}, merged={}, stored={} (turn {})",
-                turn.conversationId(), raw.size(), merged.size(), toStore.size(), turn.turnId());
-    }
-
-    private static List<Statement> merge(List<Statement> existing, List<Statement> extracted) {
-        java.util.Map<String, Statement> byKey = new java.util.LinkedHashMap<>();
-        for (Statement statement : existing) {
-            byKey.put(StatementTextNormalizer.factKey(statement.subject(), statement.predicate()), statement);
-        }
-        for (Statement statement : extracted) {
-            byKey.put(StatementTextNormalizer.factKey(statement.subject(), statement.predicate()), statement);
-        }
-        return byKey.values().stream()
-                .sorted(java.util.Comparator.comparing(Statement::createdAt).reversed())
-                .toList();
+        LOG.info("Knowledge store updated for {}: raw={}, stored={} (turn {})",
+                turn.conversationId(), raw.size(),
+                Math.min(normalized.size(), MAX_STATEMENTS), turn.turnId());
     }
 }

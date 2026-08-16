@@ -9,7 +9,6 @@ Knowledge Store ausgelesen und als JSON gespeichert.
 ```yaml
 name: mein-szenario              # Dateiname ohne .yaml empfohlen
 conversationId: test-mein-szenario
-model: ollama-main               # optional
 description: Kurzbeschreibung    # optional
 turns:
   - "Erste User-Nachricht"
