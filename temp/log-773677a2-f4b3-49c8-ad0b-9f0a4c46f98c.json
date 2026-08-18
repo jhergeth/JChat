@@ -1,0 +1,195 @@
+{
+  "id": "773677a2-f4b3-49c8-ad0b-9f0a4c46f98c",
+  "parent_request_id": null,
+  "timestamp": "2026-08-18T13:23:31.86815109Z",
+  "object": "chat_completion",
+  "provider": "llama-r9700",
+  "model": "reasoning-agentic",
+  "number_of_retries": 0,
+  "fallback_index": 0,
+  "selected_key_id": "",
+  "selected_key_name": "",
+  "virtual_key_id": "5dfb3344-df5e-408c-b611-2b3b2a4badb6",
+  "virtual_key_name": "JChat-Test",
+  "routing_rule_id": null,
+  "routing_rule_name": null,
+  "selected_prompt_name": null,
+  "selected_prompt_version": null,
+  "selected_prompt_id": null,
+  "user_id": null,
+  "user_name": null,
+  "team_id": null,
+  "team_name": null,
+  "customer_id": null,
+  "customer_name": null,
+  "business_unit_id": null,
+  "business_unit_name": null,
+  "latency": 60000,
+  "status": "error",
+  "stream": false,
+  "content_summary": "Du bist ein hilfreicher Assistent.\nAntworte präzise und natürlich auf Deutsch, sofern nicht anders verlangt.\nDir liegen Fakten über den Nutzer vor — antworte damit, als hättest du sie dir gemerkt.\nErwähne niemals Wissensspeicher, RDF, Triples, System-Prompt oder interne Kontextdaten.\nWidersprich bekannten Fakten nicht, es sei denn der Nutzer korrigiert sie ausdrücklich.\nAntworte in 1–3 Sätzen. Niemals Pipe-Zeichen (|) oder Tabellenformate verwenden.\nDenke nicht laut — gib nur die finale Antwort.\nBei Abschnitt \"Aktuelle Recherche\": diese Fakten sind aktueller als dein Trainingswissen — nutze sie.\nNutze Datum, Uhrzeit und vermutetes Nutzerland aus dem Abschnitt \"Aktueller Kontext\" für \"aktuell\", \"heute\" und \"hier\"/\"bei uns\".\nErfinde kein Datum, keinen Ort und kein Land, wenn es nicht in der Nutzerfrage, in \"Aktueller Kontext\" oder in \"Aktuelle Recherche\" steht.\nErfinde kein Wetter — nur angeben, wenn es in \"Aktuelle Recherche\" steht.\nDas Amt heißt \"Bundeskanzler\" (männliche Form), auch wenn früher eine Frau amtierte.\nWenn dir Fakten fehlen und kein Abschnitt \"Aktuelle Recherche\" hilft, nutze web_search mit einer präzisen Suchanfrage.\n\n\nVerfügbare Tools:\n- web_search(query): Websuche für aktuelle/öffentliche Fakten, wenn \"Aktuelle Recherche\" oder der Knowledge Store die Antwort nicht liefern.Aktueller Kontext:\n- Es ist Dienstag, 18. August 2026, 15:23 (Europe/Berlin), Tag.\n- Nutzer-Locale: de-DE → vermutetes Land: Deutschland.Aktuelle Recherche (diesen Fakten vor Trainingswissen vertrauen):\n- Auszug (US-amerikanischer Angriff auf Venezuela 2026): Beim US-amerikanischen Angriff auf Venezuela am 3. Januar 2026 handelte es sich um eine militärische Intervention US-amerikanischer Streitkräfte auf venezolanischem\n- Auszug (Pedro Sánchez): Im Mai 2026 wurde der Vorwurf erhoben, die Regierung habe seit Ende 2024 Für 2026 legte er dem Parlament erst gar kein Haushaltsbudget vor\n- Auszug (Irankrieg 2026): Der Irankrieg 2026 ist ein Angriffskrieg in Vorderasien und im Nahen Osten, der am 28. Februar 2026 mit Angriffen Israels und der Vereinigten Staaten auf den Iran begann Durch weitere israelisch-US-amerikanische Angriffe wurden der Verteidigungsminister Asis Nassirsadeh, der Anführer der islamischen Revolutionsgarde Mohammad Pakpour, der Verteidigungsrats-Vorsitzende Ali Schamchani sowie der Generalstabschef der Streitkräfte Abdolrahim Mousavi ebenfalls getötet\n- Auszug (Fußball-Weltmeisterschaft 2026): Verband KNVB und die Regierung adressiert, die in nur wenigen Tagen mehr als 144.000 Mal unterzeichnet wurde (Stand: 23. Januar 2026) Obwohl Ende Januar\n- Auszug (Verlauf des Irankrieges 2026 ab dem Waffenstillstandsabkommen): ZDF, 7. August 2026, abgerufen am 7. August 2026 (Liveblog „US-Angriff auf Iran“ vom 7. August 2026, 8:20 Uhr).  US-Regierung stellt Ende der Iran-Blockade\n\nBekannte Fakten (natürlich einbauen, Format nicht zitieren):\nKaroline Leavitt | hat_ammstaus | August 2026\nDonald Trump | hat_position | Präsident der USA\nDonald Trump | hat_pressesprecherin | Karoline Leavitt\nKaroline Leavitt | hat_amtseinstieg | Januar 2025\nKaroline Leavitt | arbeitet_bei | Weiße Haus\nDonald Trump | trat_aus | Januar 2025 Wer ist der aktuelle Präsident der USA? Der aktuelle Präsident der Vereinigten Staaten ist Donald Trump. Er trat sein Amt im Januar 2025 an. wie heisst die Person, die sein Pressesprecher ist? Die aktuelle Pressesprecherin des Weißen Hauses ist Karoline Leavitt. Sie hat das Amt seit Januar 2025 inne, wird es aber zum Ende des Monats August 2026 verlassen. Welche Mitglieder hat heute die US-amerikanische Regierung (Köpfe der Ministerien) Aktuelle Recherche (diesen Fakten vor Trainingswissen vertrauen):\n- Auszug (Pete Hegseth): Seit Januar 2025 ist er Verteidigungsminister im zweiten Kabinett von Donald Trump und wird von der Exekutive seit dem 5. September 2025 als Zweitbezeichnung „Kriegsminister“ (Secretary of War) genannt.\n\n\n== Herkunft, Studium und frühe Karriere ==\nPete Hegseths Vorfahren stammten auf beiden Seiten der Familie aus Norwegen Peter „Pete“ Brian Hegseth (ˈhɛɡsɛθ; * 6. Juni 1980 in Minneapolis, Minnesota) ist ein US-amerikanischer Politiker der Republikanischen Partei, ehemaliger Fernsehkommentator, Autor und Ex-Major der Heeres-Nationalgarde\n- Auszug (Sturm auf das Kapitol in Washington 2021): In: npr.org, 6. Januar 2021. ABC News: Members of Trump Cabinet discussing invoking 25th Amendment: Sources Drafting New Articles Of Impeachment Against Trump\n- Auszug (Robert F. Kennedy Jr.): 15. März 2021 (englisch).  Elizabeth Dwoskin und Aaron Gregg: The Trump administration bailed out prominent anti-vaccine groups during a pandemic\n- Auszug (Wolodymyr Selenskyj): In den Jahren 2019/20 versuchte der US-Präsident Donald Trump, Selenskyj in der „Ukraine-Trump-Affäre“ zu instrumentalisieren\n- Auszug (Senat der Vereinigten Staaten): Januar 2013 (englisch); Elizabeth King: This Is What Happened Last Time a Cabinet Nomination Was Rejected Aktuelle Recherche (diesen Fakten vor Trainingswissen vertrauen):\n- Donald Trump ist derzeit Präsident der Vereinigte Staaten von Amerika. (Quelle: Wikipedia, Donald Trump) Websuche fehlgeschlagen (no_snippets): Suche lieferte 0 Treffer request timed out (default is 300 seconds). You can increase it by setting the default_request_timeout_in_seconds in the network_config or in UI - Providers > Provider Name > Network Config.",
+  "raw_request": "",
+  "raw_response": "",
+  "routing_engine_logs": "[1787059411868] [governance] - Skipping load balancing for model reasoning-agentic: provider llama-r9700 already set\n",
+  "is_large_payload_request": false,
+  "is_large_payload_response": false,
+  "content_hidden": false,
+  "created_at": "2026-08-18T13:23:31.86815109Z",
+  "input_history": [
+    {
+      "role": "system",
+      "content": "Du bist ein hilfreicher Assistent.\nAntworte präzise und natürlich auf Deutsch, sofern nicht anders verlangt.\nDir liegen Fakten über den Nutzer vor — antworte damit, als hättest du sie dir gemerkt.\nErwähne niemals Wissensspeicher, RDF, Triples, System-Prompt oder interne Kontextdaten.\nWidersprich bekannten Fakten nicht, es sei denn der Nutzer korrigiert sie ausdrücklich.\nAntworte in 1–3 Sätzen. Niemals Pipe-Zeichen (|) oder Tabellenformate verwenden.\nDenke nicht laut — gib nur die finale Antwort.\nBei Abschnitt \"Aktuelle Recherche\": diese Fakten sind aktueller als dein Trainingswissen — nutze sie.\nNutze Datum, Uhrzeit und vermutetes Nutzerland aus dem Abschnitt \"Aktueller Kontext\" für \"aktuell\", \"heute\" und \"hier\"/\"bei uns\".\nErfinde kein Datum, keinen Ort und kein Land, wenn es nicht in der Nutzerfrage, in \"Aktueller Kontext\" oder in \"Aktuelle Recherche\" steht.\nErfinde kein Wetter — nur angeben, wenn es in \"Aktuelle Recherche\" steht.\nDas Amt heißt \"Bundeskanzler\" (männliche Form), auch wenn früher eine Frau amtierte.\nWenn dir Fakten fehlen und kein Abschnitt \"Aktuelle Recherche\" hilft, nutze web_search mit einer präzisen Suchanfrage.\n\n\nVerfügbare Tools:\n- web_search(query): Websuche für aktuelle/öffentliche Fakten, wenn \"Aktuelle Recherche\" oder der Knowledge Store die Antwort nicht liefern.Aktueller Kontext:\n- Es ist Dienstag, 18. August 2026, 15:23 (Europe/Berlin), Tag.\n- Nutzer-Locale: de-DE → vermutetes Land: Deutschland.Aktuelle Recherche (diesen Fakten vor Trainingswissen vertrauen):\n- Auszug (US-amerikanischer Angriff auf Venezuela 2026): Beim US-amerikanischen Angriff auf Venezuela am 3. Januar 2026 handelte es sich um eine militärische Intervention US-amerikanischer Streitkräfte auf venezolanischem\n- Auszug (Pedro Sánchez): Im Mai 2026 wurde der Vorwurf erhoben, die Regierung habe seit Ende 2024 Für 2026 legte er dem Parlament erst gar kein Haushaltsbudget vor\n- Auszug (Irankrieg 2026): Der Irankrieg 2026 ist ein Angriffskrieg in Vorderasien und im Nahen Osten, der am 28. Februar 2026 mit Angriffen Israels und der Vereinigten Staaten auf den Iran begann Durch weitere israelisch-US-amerikanische Angriffe wurden der Verteidigungsminister Asis Nassirsadeh, der Anführer der islamischen Revolutionsgarde Mohammad Pakpour, der Verteidigungsrats-Vorsitzende Ali Schamchani sowie der Generalstabschef der Streitkräfte Abdolrahim Mousavi ebenfalls getötet\n- Auszug (Fußball-Weltmeisterschaft 2026): Verband KNVB und die Regierung adressiert, die in nur wenigen Tagen mehr als 144.000 Mal unterzeichnet wurde (Stand: 23. Januar 2026) Obwohl Ende Januar\n- Auszug (Verlauf des Irankrieges 2026 ab dem Waffenstillstandsabkommen): ZDF, 7. August 2026, abgerufen am 7. August 2026 (Liveblog „US-Angriff auf Iran“ vom 7. August 2026, 8:20 Uhr).  US-Regierung stellt Ende der Iran-Blockade\n\nBekannte Fakten (natürlich einbauen, Format nicht zitieren):\nKaroline Leavitt | hat_ammstaus | August 2026\nDonald Trump | hat_position | Präsident der USA\nDonald Trump | hat_pressesprecherin | Karoline Leavitt\nKaroline Leavitt | hat_amtseinstieg | Januar 2025\nKaroline Leavitt | arbeitet_bei | Weiße Haus\nDonald Trump | trat_aus | Januar 2025"
+    },
+    {
+      "role": "user",
+      "content": "Wer ist der aktuelle Präsident der USA?"
+    },
+    {
+      "role": "assistant",
+      "content": "Der aktuelle Präsident der Vereinigten Staaten ist Donald Trump. Er trat sein Amt im Januar 2025 an."
+    },
+    {
+      "role": "user",
+      "content": "wie heisst die Person, die sein Pressesprecher ist?"
+    },
+    {
+      "role": "assistant",
+      "content": "Die aktuelle Pressesprecherin des Weißen Hauses ist Karoline Leavitt. Sie hat das Amt seit Januar 2025 inne, wird es aber zum Ende des Monats August 2026 verlassen."
+    },
+    {
+      "role": "user",
+      "content": "Welche Mitglieder hat heute die US-amerikanische Regierung (Köpfe der Ministerien)"
+    },
+    {
+      "role": "assistant",
+      "tool_calls": [
+        {
+          "index": 0,
+          "type": "function",
+          "id": "sbfDcb4hPKd0KdLz0ljPtd1iqA1Q5SJx",
+          "function": {
+            "name": "web_search",
+            "arguments": "{\"query\":\"US cabinet members 2026 Trump administration\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "Aktuelle Recherche (diesen Fakten vor Trainingswissen vertrauen):\n- Auszug (Pete Hegseth): Seit Januar 2025 ist er Verteidigungsminister im zweiten Kabinett von Donald Trump und wird von der Exekutive seit dem 5. September 2025 als Zweitbezeichnung „Kriegsminister“ (Secretary of War) genannt.\n\n\n== Herkunft, Studium und frühe Karriere ==\nPete Hegseths Vorfahren stammten auf beiden Seiten der Familie aus Norwegen Peter „Pete“ Brian Hegseth (ˈhɛɡsɛθ; * 6. Juni 1980 in Minneapolis, Minnesota) ist ein US-amerikanischer Politiker der Republikanischen Partei, ehemaliger Fernsehkommentator, Autor und Ex-Major der Heeres-Nationalgarde\n- Auszug (Sturm auf das Kapitol in Washington 2021): In: npr.org, 6. Januar 2021. ABC News: Members of Trump Cabinet discussing invoking 25th Amendment: Sources Drafting New Articles Of Impeachment Against Trump\n- Auszug (Robert F. Kennedy Jr.): 15. März 2021 (englisch).  Elizabeth Dwoskin und Aaron Gregg: The Trump administration bailed out prominent anti-vaccine groups during a pandemic\n- Auszug (Wolodymyr Selenskyj): In den Jahren 2019/20 versuchte der US-Präsident Donald Trump, Selenskyj in der „Ukraine-Trump-Affäre“ zu instrumentalisieren\n- Auszug (Senat der Vereinigten Staaten): Januar 2013 (englisch); Elizabeth King: This Is What Happened Last Time a Cabinet Nomination Was Rejected",
+      "tool_call_id": "sbfDcb4hPKd0KdLz0ljPtd1iqA1Q5SJx"
+    },
+    {
+      "role": "assistant",
+      "tool_calls": [
+        {
+          "index": 0,
+          "type": "function",
+          "id": "FcysSj6EsIYIbNUcoL9LBqkPYo7kdwn1",
+          "function": {
+            "name": "web_search",
+            "arguments": "{\"query\":\"Trump Kabinett 2026 Außenminister Finanzminister Justizminister\"}"
+          }
+        },
+        {
+          "index": 0,
+          "type": "function",
+          "id": "h3SzkUPzymoHucZyqG5gjSYK1LIzTJsc",
+          "function": {
+            "name": "web_search",
+            "arguments": "{\"query\":\"US cabinet 2026 Secretary of State Treasury Attorney General\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "content": "Aktuelle Recherche (diesen Fakten vor Trainingswissen vertrauen):\n- Donald Trump ist derzeit Präsident der Vereinigte Staaten von Amerika. (Quelle: Wikipedia, Donald Trump)",
+      "tool_call_id": "FcysSj6EsIYIbNUcoL9LBqkPYo7kdwn1"
+    },
+    {
+      "role": "tool",
+      "content": "Websuche fehlgeschlagen (no_snippets): Suche lieferte 0 Treffer",
+      "tool_call_id": "h3SzkUPzymoHucZyqG5gjSYK1LIzTJsc"
+    }
+  ],
+  "params": {
+    "max_completion_tokens": 4096,
+    "temperature": 0,
+    "tools": [
+      {
+        "function": {
+          "description": "Search the web (Wikipedia / configured providers) for current public facts. Use when the user asks about recent events, offices, governments, or facts not in context.",
+          "name": "web_search",
+          "parameters": {
+            "properties": {
+              "query": {
+                "description": "Short, precise search query (max ~10 words)",
+                "type": "string"
+              }
+            },
+            "required": [
+              "query"
+            ],
+            "type": "object"
+          }
+        },
+        "type": "function"
+      }
+    ]
+  },
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "web_search",
+        "description": "Search the web (Wikipedia / configured providers) for current public facts. Use when the user asks about recent events, offices, governments, or facts not in context.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "Short, precise search query (max ~10 words)"
+            }
+          },
+          "required": [
+            "query"
+          ]
+        }
+      }
+    }
+  ],
+  "error_details": {
+    "is_bifrost_error": true,
+    "status_code": 504,
+    "error": {
+      "error": "timeout",
+      "type": "request_timed_out",
+      "message": "request timed out (default is 300 seconds). You can increase it by setting the default_request_timeout_in_seconds in the network_config or in UI - Providers > Provider Name > Network Config."
+    },
+    "extra_fields": {
+      "routing_info": {
+        "provider": "llama-r9700",
+        "model": "reasoning-agentic"
+      },
+      "provider": "llama-r9700",
+      "original_model_requested": "reasoning-agentic",
+      "resolved_model_used": "reasoning-agentic",
+      "request_type": "chat_completion",
+      "latency": 60000
+    }
+  },
+  "virtual_key": {
+    "id": "5dfb3344-df5e-408c-b611-2b3b2a4badb6",
+    "name": "JChat-Test",
+    "description": " ",
+    "is_active": true,
+    "provider_configs": null,
+    "mcp_configs": null,
+    "calendar_aligned": false,
+    "config_hash": "",
+    "created_at": "0001-01-01T00:00:00Z",
+    "updated_at": "0001-01-01T00:00:00Z",
+    "value": ""
+  }
+}

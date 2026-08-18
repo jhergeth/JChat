@@ -22,6 +22,12 @@ import name.hergeth.jchat.openai.dto.ChatCompletionResponse;
 import name.hergeth.jchat.openai.dto.ChatMessage;
 import name.hergeth.jchat.openai.dto.Choice;
 import name.hergeth.jchat.openai.dto.Usage;
+import name.hergeth.jchat.tools.AgentChatResult;
+import name.hergeth.jchat.tools.AgentLoop;
+import name.hergeth.jchat.tools.ToolContext;
+import name.hergeth.jchat.tools.ToolExecutionRecord;
+import name.hergeth.jchat.tools.ToolRegistry;
+import io.micronaut.context.annotation.Value;
 import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
@@ -77,6 +83,15 @@ public class ChatCompletionsController {
     @Inject
     SessionContextResolver sessionContextResolver;
 
+    @Inject
+    ToolRegistry toolRegistry;
+
+    @Inject
+    AgentLoop agentLoop;
+
+    @Value("${app.agent.enabled:true}")
+    boolean agentEnabled;
+
     @Post("/chat/completions")
     public ChatCompletionResponse chatCompletions(
             @Body ChatCompletionRequest request,
@@ -109,7 +124,7 @@ public class ChatCompletionsController {
         List<ChatMessage> messages = isChat
                 ? promptBuilder.build(
                         request.messages(),
-                        systemPromptProvider.get(),
+                        enrichedSystemPrompt(isChat),
                         retrievedStatements,
                         searchTrace.promptContext(),
                         ambientContext)
@@ -123,8 +138,18 @@ public class ChatCompletionsController {
 
         LOG.debug("Chat completion for conversation {} via {} (type={})", conversationId, provider, requestType);
         String answer;
+        List<ToolExecutionRecord> toolCalls = List.of();
         try {
-            answer = aiServiceFactory.chat(provider, messages);
+            if (isChat && useAgentLoop()) {
+                AgentChatResult agentResult = agentLoop.run(
+                        provider, messages, new ToolContext(conversationId, ambientContext, lastUserMessage));
+                answer = agentResult.text();
+                toolCalls = agentResult.toolCalls();
+                LOG.debug("Agent loop finished with {} tool call(s), {} steps",
+                        toolCalls.size(), agentResult.stepsUsed());
+            } else {
+                answer = aiServiceFactory.chat(provider, messages);
+            }
         } catch (LlmResponseException e) {
             LOG.error("LLM returned no usable text for conversation {} via {}: {}",
                     conversationId, provider, e.getMessage());
@@ -132,17 +157,22 @@ public class ChatCompletionsController {
         }
 
         if (isChat) {
+            String turnId = UUID.randomUUID().toString();
             turnProcessor.scheduleProcess(
-                    TurnFactory.fromExchange(conversationId, request.messages(), answer));
-        }
+                    TurnFactory.fromExchange(conversationId, turnId, request.messages(), answer));
 
-        String debugTraceId = debugTraceService.record(
-                conversationId, requestType, lastUserMessage, retrievedContext, ambientContext,
-                messages, answer, provider, searchTrace);
+            String debugTraceId = debugTraceService.record(
+                    conversationId, requestType, lastUserMessage, retrievedContext, ambientContext,
+                    messages, answer, provider, searchTrace, toolCalls);
 
-        if (isChat) {
             searchPostProcessor.scheduleAfterAnswer(
-                    conversationId, lastUserMessage, answer, provider, searchTrace, debugTraceId);
+                    conversationId, lastUserMessage, answer, provider, searchTrace, debugTraceId, turnId);
+            searchPostProcessor.scheduleAfterToolCalls(
+                    conversationId, lastUserMessage, answer, provider, toolCalls, turnId);
+        } else {
+            debugTraceService.record(
+                    conversationId, requestType, lastUserMessage, retrievedContext, ambientContext,
+                    messages, answer, provider, searchTrace, toolCalls);
         }
 
         ChatMessage responseMessage = new ChatMessage("assistant", answer);
@@ -156,6 +186,18 @@ public class ChatCompletionsController {
                 List.of(choice),
                 new Usage(0, 0, 0)
         );
+    }
+
+    private boolean useAgentLoop() {
+        return agentEnabled && toolRegistry.hasEnabledTools();
+    }
+
+    private String enrichedSystemPrompt(boolean isChat) {
+        String prompt = systemPromptProvider.get();
+        if (isChat && useAgentLoop()) {
+            prompt = prompt + toolRegistry.combinedUsageHints();
+        }
+        return prompt;
     }
 
     private String resolveProvider(ChatCompletionRequest request, boolean isChat) {

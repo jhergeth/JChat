@@ -1,7 +1,7 @@
 package name.hergeth.jchat.ai.search;
 
-import io.micronaut.context.annotation.Value;
 import jakarta.inject.Singleton;
+import name.hergeth.jchat.ai.KnowledgeLimits;
 import name.hergeth.jchat.ai.KnowledgeStoreWriter;
 import name.hergeth.jchat.ai.llm.BackgroundLlmExecutor;
 import name.hergeth.jchat.ai.model.Statement;
@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import name.hergeth.jchat.tools.ToolExecutionRecord;
+
 @Singleton
 public class SearchPostProcessor {
 
@@ -22,19 +24,19 @@ public class SearchPostProcessor {
     private final KnowledgeStoreWriter knowledgeStoreWriter;
     private final DebugTraceService debugTraceService;
     private final BackgroundLlmExecutor backgroundLlmExecutor;
-    private final int maxStoreStatements;
+    private final KnowledgeLimits limits;
 
     public SearchPostProcessor(
             SearchTripleExtractor tripleExtractor,
             KnowledgeStoreWriter knowledgeStoreWriter,
             DebugTraceService debugTraceService,
             BackgroundLlmExecutor backgroundLlmExecutor,
-            @Value("${app.retriever.max-statements:12}") int maxStoreStatements) {
+            KnowledgeLimits limits) {
         this.tripleExtractor = tripleExtractor;
         this.knowledgeStoreWriter = knowledgeStoreWriter;
         this.debugTraceService = debugTraceService;
         this.backgroundLlmExecutor = backgroundLlmExecutor;
-        this.maxStoreStatements = maxStoreStatements;
+        this.limits = limits;
     }
 
     public void scheduleAfterAnswer(
@@ -43,7 +45,8 @@ public class SearchPostProcessor {
             String answer,
             String chatProvider,
             SearchTrace searchTrace,
-            String debugTraceId) {
+            String debugTraceId,
+            String turnId) {
         if (searchTrace == null || !searchTrace.searched() || !"success".equals(searchTrace.status())) {
             return;
         }
@@ -54,7 +57,29 @@ public class SearchPostProcessor {
         backgroundLlmExecutor.run(
                 "search-extract:" + conversationId,
                 () -> extractAndStore(
-                        conversationId, userMessage, answer, chatProvider, searchTrace, debugTraceId));
+                        conversationId, userMessage, answer, chatProvider, searchTrace, debugTraceId, turnId));
+    }
+
+    public void scheduleAfterToolCalls(
+            String conversationId,
+            String userMessage,
+            String answer,
+            String chatProvider,
+            List<ToolExecutionRecord> toolCalls,
+            String turnId) {
+        if (toolCalls == null || toolCalls.isEmpty()) {
+            return;
+        }
+        for (ToolExecutionRecord record : toolCalls) {
+            if (!record.hasWebSearchTrace()) {
+                continue;
+            }
+            SearchTrace trace = record.searchTrace();
+            backgroundLlmExecutor.run(
+                    "tool-search-extract:" + conversationId + ":" + record.step(),
+                    () -> extractAndStore(
+                            conversationId, userMessage, answer, chatProvider, trace, null, turnId));
+        }
     }
 
     private void extractAndStore(
@@ -63,19 +88,23 @@ public class SearchPostProcessor {
             String answer,
             String chatProvider,
             SearchTrace searchTrace,
-            String debugTraceId) {
+            String debugTraceId,
+            String turnId) {
         try {
-            String turnId = "web-" + UUID.randomUUID().toString().substring(0, 4);
+            String storeTurnId = turnId == null || turnId.isBlank()
+                    ? "web-" + UUID.randomUUID().toString().substring(0, 8)
+                    : turnId;
             List<SearchSnippet> snippets = searchTrace.snippets();
 
             List<Statement> wikiFacts = WikiOfficeHolderExtractor.extractOfficeFacts(
-                    snippets, conversationId, turnId);
+                    snippets, conversationId, storeTurnId);
             List<Statement> llmFacts = tripleExtractor.extractAfterAnswer(
-                    userMessage, answer, snippets, conversationId, turnId, chatProvider);
+                    userMessage, answer, snippets, conversationId, storeTurnId, chatProvider);
             List<Statement> statements = mergeStatements(wikiFacts, llmFacts);
 
             if (!statements.isEmpty()) {
-                knowledgeStoreWriter.mergeSearchResults(conversationId, statements, maxStoreStatements);
+                knowledgeStoreWriter.mergeSearchResults(
+                        conversationId, statements, limits.maxStoreStatements());
             }
 
             List<String> tripleLines = statements.stream()
@@ -89,10 +118,13 @@ public class SearchPostProcessor {
                     searchTrace.query(),
                     searchTrace.snippetCount(),
                     tripleLines,
+                    searchTrace.storeFacts(),
                     snippets,
                     searchTrace.promptContext());
 
-            debugTraceService.updateSearchTrace(debugTraceId, updated);
+            if (debugTraceId != null && !debugTraceId.isBlank()) {
+                debugTraceService.updateSearchTrace(debugTraceId, updated);
+            }
 
             LOG.info("Async search extraction for '{}': {} triples stored (conversation {})",
                     searchTrace.query(), statements.size(), conversationId);

@@ -12,31 +12,60 @@ final class StatementRelevanceScorer {
 
     private StatementRelevanceScorer() {}
 
+    static List<Statement> mostRecent(List<Statement> statements, int maxResults) {
+        return recentStatements(statements, maxResults);
+    }
+
     static List<Statement> rank(List<Statement> statements, String query, int maxResults) {
+        List<RankedStatement> scored = rankScored(statements, query, maxResults);
+        List<Statement> relevant = scored.stream()
+                .filter(ranked -> ranked.score() > 0)
+                .map(RankedStatement::statement)
+                .toList();
+        return relevant.isEmpty()
+                ? recentStatements(statements, maxResults)
+                : relevant;
+    }
+
+    static List<RankedStatement> rankScored(List<Statement> statements, String query, int maxResults) {
+        return rankScoredInternal(statements, query, maxResults, false);
+    }
+
+    /** Store lookup: match query terms against subject only (simple entity facts). */
+    static List<RankedStatement> rankScoredForStoreLookup(
+            List<Statement> statements,
+            String query,
+            int maxResults) {
+        return rankScoredInternal(statements, query, maxResults, true);
+    }
+
+    private static List<RankedStatement> rankScoredInternal(
+            List<Statement> statements,
+            String query,
+            int maxResults,
+            boolean subjectOnly) {
         if (statements.isEmpty()) {
             return List.of();
         }
         Set<String> terms = QueryTerms.from(query);
         if (terms.isEmpty()) {
-            return recentStatements(statements, maxResults);
+            return List.of();
         }
 
-        List<ScoredStatement> scored = statements.stream()
-                .map(statement -> new ScoredStatement(statement, score(statement, terms, query)))
+        List<RankedStatement> scored = statements.stream()
+                .map(statement -> new RankedStatement(
+                        statement,
+                        subjectOnly
+                                ? scoreStoreLookup(statement, terms, query)
+                                : score(statement, terms, query)))
+                .filter(entry -> entry.score() > 0)
                 .sorted(Comparator
-                        .comparingInt(ScoredStatement::score).reversed()
+                        .comparingInt(RankedStatement::score).reversed()
                         .thenComparing(s -> s.statement().createdAt(), Comparator.reverseOrder()))
-                .toList();
-
-        List<Statement> relevant = scored.stream()
-                .filter(s -> s.score() > 0)
                 .limit(maxResults)
-                .map(ScoredStatement::statement)
                 .toList();
 
-        return relevant.isEmpty()
-                ? recentStatements(statements, maxResults)
-                : relevant;
+        return scored;
     }
 
     private static int score(Statement statement, Set<String> terms, String query) {
@@ -45,14 +74,32 @@ final class StatementRelevanceScorer {
         String object = normalize(statement.object());
         int total = 0;
         for (String term : terms) {
-            if (subject.contains(term)) {
+            if (TermMatcher.matches(subject, term)) {
                 total += 3;
             }
-            if (predicate.contains(term)) {
+            if (TermMatcher.matches(predicate, term)) {
                 total += 2;
             }
-            if (object.contains(term)) {
+            if (TermMatcher.matches(object, term)) {
                 total += 2;
+            }
+        }
+        total -= countryMismatchPenalty(query, subject, predicate, object);
+        return Math.max(0, total);
+    }
+
+    private static int scoreStoreLookup(Statement statement, Set<String> terms, String query) {
+        String subject = normalize(statement.subject());
+        String predicate = normalize(statement.predicate());
+        String object = normalize(statement.object());
+        int total = 0;
+        for (String term : terms) {
+            if (TermMatcher.matches(subject, term)) {
+                total += 4;
+            } else if (TermMatcher.matches(object, term)) {
+                total += 3;
+            } else if (TermMatcher.matches(predicate, term)) {
+                total += 1;
             }
         }
         total -= countryMismatchPenalty(query, subject, predicate, object);
@@ -102,5 +149,5 @@ final class StatementRelevanceScorer {
         return value == null ? "" : value.toLowerCase(Locale.ROOT);
     }
 
-    private record ScoredStatement(Statement statement, int score) {}
+    record RankedStatement(Statement statement, int score) {}
 }

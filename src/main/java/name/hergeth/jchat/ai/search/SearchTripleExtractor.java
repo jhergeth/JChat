@@ -1,14 +1,16 @@
 package name.hergeth.jchat.ai.search;
 
-import io.micronaut.context.annotation.Value;
-import jakarta.inject.Singleton;
 import name.hergeth.jchat.ai.IdentityStatementNormalizer;
+import name.hergeth.jchat.ai.KnowledgeLimits;
 import name.hergeth.jchat.ai.PromptLoader;
 import name.hergeth.jchat.ai.StatementParser;
 import name.hergeth.jchat.ai.llm.AiServiceFactory;
 import name.hergeth.jchat.ai.llm.TaskRouter;
+import name.hergeth.jchat.ai.model.FactSource;
 import name.hergeth.jchat.ai.model.Statement;
 import name.hergeth.jchat.openai.dto.ChatMessage;
+import io.micronaut.context.annotation.Value;
+import jakarta.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,21 +29,21 @@ public class SearchTripleExtractor {
     private final StatementParser statementParser;
     private final IdentityStatementNormalizer statementNormalizer;
     private final String extractionPrompt;
-    private final int maxTriples;
+    private final KnowledgeLimits limits;
 
     public SearchTripleExtractor(
             AiServiceFactory aiServiceFactory,
             TaskRouter taskRouter,
             StatementParser statementParser,
             IdentityStatementNormalizer statementNormalizer,
-            @Value("${app.search-extraction-prompt-path:search-extraction-prompt.txt}") String promptPath,
-            @Value("${app.search.max-triples:6}") int maxTriples) throws IOException {
+            KnowledgeLimits limits,
+            @Value("${app.search-extraction-prompt-path:search-extraction-prompt.txt}") String promptPath) throws IOException {
         this.aiServiceFactory = aiServiceFactory;
         this.taskRouter = taskRouter;
         this.statementParser = statementParser;
         this.statementNormalizer = statementNormalizer;
+        this.limits = limits;
         this.extractionPrompt = PromptLoader.load(promptPath);
-        this.maxTriples = maxTriples;
     }
 
     public List<Statement> extract(String userMessage, List<SearchSnippet> snippets, String conversationId, String turnId) {
@@ -69,11 +71,12 @@ public class SearchTripleExtractor {
         List<Statement> raw = statementParser.parse(response, conversationId, turnId, now);
         List<Statement> normalized = statementNormalizer.normalize(raw).stream()
                 .filter(s -> !SearchTripleQualityFilter.isLowQuality(s))
+                .map(s -> s.withSource(FactSource.WEB_SEARCH))
                 .toList();
         if (normalized.isEmpty() && !raw.isEmpty()) {
             LOG.warn("Search extraction: raw={}, normalized/filtered=0", raw.size());
         }
-        return normalized.stream().limit(maxTriples).toList();
+        return normalized.stream().limit(limits.maxSearchInContext()).toList();
     }
 
     private static String buildInput(String userMessage, String assistantAnswer, List<SearchSnippet> snippets) {

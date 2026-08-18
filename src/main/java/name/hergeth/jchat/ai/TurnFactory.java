@@ -13,9 +13,17 @@ public final class TurnFactory {
     private TurnFactory() {}
 
     public static Turn fromExchange(String conversationId, List<ChatMessage> messages, String assistantReply) {
+        return fromExchange(conversationId, UUID.randomUUID().toString(), messages, assistantReply);
+    }
+
+    public static Turn fromExchange(
+            String conversationId,
+            String turnId,
+            List<ChatMessage> messages,
+            String assistantReply) {
         return new Turn(
                 conversationId,
-                UUID.randomUUID().toString(),
+                turnId,
                 lastUserMessage(messages),
                 assistantReply,
                 toolResults(messages),

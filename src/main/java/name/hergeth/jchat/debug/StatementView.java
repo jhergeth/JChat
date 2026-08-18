@@ -8,6 +8,7 @@ public record StatementView(
         String predicate,
         String object,
         String turnId,
+        String source,
         @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", timezone = "UTC")
         Instant createdAt
 ) {}

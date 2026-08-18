@@ -1,5 +1,6 @@
 package name.hergeth.jchat.ai;
 
+import name.hergeth.jchat.ai.model.FactSource;
 import name.hergeth.jchat.ai.model.Statement;
 import jakarta.inject.Singleton;
 
@@ -41,7 +42,8 @@ public class IdentityStatementNormalizer implements StatementNormalizer {
                 StatementTextNormalizer.normalizeObject(statement.object()),
                 statement.conversationId(),
                 statement.turnId(),
-                statement.createdAt());
+                statement.createdAt(),
+                statement.source());
     }
 
     private boolean isComplete(Statement statement) {

@@ -13,22 +13,24 @@ import java.util.List;
 public class TurnProcessor {
 
     private static final Logger LOG = LoggerFactory.getLogger(TurnProcessor.class);
-    private static final int MAX_STATEMENTS = 12;
 
     private final StatementExtractor statementExtractor;
     private final StatementNormalizer statementNormalizer;
     private final KnowledgeStoreWriter knowledgeStoreWriter;
     private final BackgroundLlmExecutor backgroundLlmExecutor;
+    private final KnowledgeLimits limits;
 
     public TurnProcessor(
             StatementExtractor statementExtractor,
             StatementNormalizer statementNormalizer,
             KnowledgeStoreWriter knowledgeStoreWriter,
-            BackgroundLlmExecutor backgroundLlmExecutor) {
+            BackgroundLlmExecutor backgroundLlmExecutor,
+            KnowledgeLimits limits) {
         this.statementExtractor = statementExtractor;
         this.statementNormalizer = statementNormalizer;
         this.knowledgeStoreWriter = knowledgeStoreWriter;
         this.backgroundLlmExecutor = backgroundLlmExecutor;
+        this.limits = limits;
     }
 
     public void scheduleProcess(Turn turn) {
@@ -52,10 +54,10 @@ public class TurnProcessor {
             return;
         }
 
-        knowledgeStoreWriter.merge(turn.conversationId(), normalized, MAX_STATEMENTS);
+        knowledgeStoreWriter.merge(turn.conversationId(), normalized, limits.maxStoreStatements());
 
         LOG.debug("Knowledge store updated for {}: raw={}, stored={} (turn {})",
                 turn.conversationId(), raw.size(),
-                Math.min(normalized.size(), MAX_STATEMENTS), turn.turnId());
+                Math.min(normalized.size(), limits.maxStoreStatements()), turn.turnId());
     }
 }

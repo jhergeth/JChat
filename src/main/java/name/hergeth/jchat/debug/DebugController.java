@@ -4,6 +4,7 @@ import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.QueryValue;
 import jakarta.inject.Inject;
+import name.hergeth.jchat.ai.KnowledgeLimits;
 import name.hergeth.jchat.ai.llm.BackgroundLlmExecutor;
 
 import java.util.List;
@@ -21,6 +22,9 @@ public class DebugController {
 
     @Inject
     BackgroundLlmExecutor backgroundLlmExecutor;
+
+    @Inject
+    KnowledgeLimits knowledgeLimits;
 
     @Get("/latest")
     public Optional<TurnDebugSnapshot> latest(
@@ -47,8 +51,14 @@ public class DebugController {
     @Get("/ui-info")
     public Map<String, Object> uiInfo() {
         return Map.of(
-                "uiVersion", "2026-08-18c",
-                "features", List.of("turn-snapshot-store", "conversation-combobox", "dual-scroll-layout"));
+                "uiVersion", "2026-08-18i",
+                "features", List.of("turn-snapshot-store", "conversation-combobox", "dual-scroll-layout", "tool-calls", "pre-llm-research-source"),
+                "retriever", Map.of(
+                        "minTurns", knowledgeLimits.minPromptTurns(),
+                        "minStatements", knowledgeLimits.minPromptStatements(),
+                        "maxStatements", knowledgeLimits.maxPromptStatements(),
+                        "maxKnowledge", knowledgeLimits.maxKnowledgeInContext(),
+                        "maxSearch", knowledgeLimits.maxSearchInContext()));
     }
 
     @Get("/trace/{id}")

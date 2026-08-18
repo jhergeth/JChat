@@ -5,6 +5,7 @@ import name.hergeth.jchat.ai.context.AmbientContext;
 import name.hergeth.jchat.ai.model.Statement;
 import name.hergeth.jchat.ai.search.SearchTrace;
 import name.hergeth.jchat.openai.dto.ChatMessage;
+import name.hergeth.jchat.tools.ToolExecutionRecord;
 import jakarta.inject.Singleton;
 
 import java.time.Instant;
@@ -33,6 +34,21 @@ public class DebugTraceService {
             String llmResponse,
             String chatProvider,
             SearchTrace searchTrace) {
+        return record(conversationId, requestType, userInput, retrievedContext, ambientContext,
+                prompt, llmResponse, chatProvider, searchTrace, List.of());
+    }
+
+    public String record(
+            String conversationId,
+            String requestType,
+            String userInput,
+            List<String> retrievedContext,
+            AmbientContext ambientContext,
+            List<ChatMessage> prompt,
+            String llmResponse,
+            String chatProvider,
+            SearchTrace searchTrace,
+            List<ToolExecutionRecord> toolCalls) {
         String id = UUID.randomUUID().toString();
         TurnDebugSnapshot snapshot = new TurnDebugSnapshot(
                 id,
@@ -46,7 +62,8 @@ public class DebugTraceService {
                 llmResponse,
                 chatProvider,
                 SearchTraceView.from(searchTrace),
-                toViews(knowledgeStore.all(conversationId)));
+                toViews(knowledgeStore.all(conversationId)),
+                toToolViews(toolCalls));
         traceStore.add(snapshot);
         return id;
     }
@@ -72,7 +89,8 @@ public class DebugTraceService {
                 prior.llmResponse(),
                 prior.chatProvider(),
                 SearchTraceView.from(searchTrace),
-                prior.knowledgeStore());
+                prior.knowledgeStore(),
+                prior.toolCalls());
         traceStore.replace(updated);
     }
 
@@ -80,11 +98,28 @@ public class DebugTraceService {
         return toViews(knowledgeStore.all(conversationId));
     }
 
+    private static List<ToolCallView> toToolViews(List<ToolExecutionRecord> toolCalls) {
+        if (toolCalls == null || toolCalls.isEmpty()) {
+            return List.of();
+        }
+        return toolCalls.stream()
+                .map(t -> new ToolCallView(
+                        t.step(),
+                        t.toolName(),
+                        t.argumentsJson(),
+                        t.result(),
+                        t.error(),
+                        t.durationMs(),
+                        t.dataSource(),
+                        t.searchQuery()))
+                .toList();
+    }
+
     private static List<StatementView> toViews(List<Statement> statements) {
         return statements.stream()
                 .map(s -> new StatementView(
                         s.subject(), s.predicate(), s.object(),
-                        s.turnId(), s.createdAt()))
+                        s.turnId(), s.source().name(), s.createdAt()))
                 .toList();
     }
 }

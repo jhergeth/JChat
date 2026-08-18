@@ -30,12 +30,26 @@ app:
     recent-turns: 3
     default-timezone: Europe/Berlin
     default-locale: de-DE
+  knowledge:
+    max-statements: 1000
   retriever:
-    max-statements: 12
+    max-statements: 20
+    min-statements: 10
+    min-turns: 3
+    max-knowledge: 12
+    max-search: 6
   search:
     enabled: true
     max-results: 5
-    max-triples: 6
+    knowledge-store-first: true
+  agent:
+    enabled: true
+    max-steps: 4
+    max-tool-calls: 2
+    max-tool-calls-per-step: 1
+  tools:
+    web-search:
+      enabled: true
     xnsearch:
       base-url: ${XNSEARCH_URL:}
       max-pages: 5

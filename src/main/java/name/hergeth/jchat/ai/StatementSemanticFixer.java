@@ -98,7 +98,8 @@ final class StatementSemanticFixer {
                 statement.subject(),
                 statement.conversationId(),
                 statement.turnId(),
-                statement.createdAt());
+                statement.createdAt(),
+                statement.source());
     }
 
     private static Statement canonicalizeEntities(Statement statement) {
@@ -108,7 +109,8 @@ final class StatementSemanticFixer {
                 canonicalName(statement.object()),
                 statement.conversationId(),
                 statement.turnId(),
-                statement.createdAt());
+                statement.createdAt(),
+                statement.source());
     }
 
     private static String canonicalName(String value) {

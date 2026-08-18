@@ -2,4 +2,19 @@ mustContain:
   - subject: Canberra
     predicate: ist_hauptstadt_von
     object: Australien
-minStatements: 1
+  - subject: Donald Trump
+    predicate: hat_pressesprecher
+    object: Karoline Leavitt
+  - subject: Donald Trump
+    predicate: ist
+    object: Präsident der USA
+  - subject: Friedrich Merz
+    predicate: hat_ehepartner
+    object: Charlotte Merz
+  - subject: Friedrich Merz
+    predicate: ist
+    object: Bundeskanzler
+  - subject: Canberra
+    predicate: hat_einwohner
+    object: 500000
+minStatements: 5

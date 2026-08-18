@@ -17,5 +17,10 @@ public record TurnDebugSnapshot(
         String llmResponse,
         String chatProvider,
         SearchTraceView searchTrace,
-        List<StatementView> knowledgeStore
-) {}
+        List<StatementView> knowledgeStore,
+        List<ToolCallView> toolCalls
+) {
+    public TurnDebugSnapshot {
+        toolCalls = toolCalls == null ? List.of() : List.copyOf(toolCalls);
+    }
+}

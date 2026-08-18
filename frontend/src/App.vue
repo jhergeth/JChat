@@ -11,7 +11,15 @@ const error = ref(null)
 const traces = ref([])
 const selectedTraceId = ref(null)
 
-const UI_VERSION = '2026-08-18c'
+const UI_VERSION = '2026-08-18i'
+
+const retrieverHint = ref({
+  minTurns: 3,
+  minStatements: 6,
+  maxStatements: 12,
+  maxKnowledge: 12,
+  maxSearch: 6,
+})
 
 let timer = null
 
@@ -33,20 +41,12 @@ const retrievedContext = computed(() => snapshot.value?.retrievedContext ?? [])
 const searchTrace = computed(() => snapshot.value?.searchTrace ?? null)
 const prompt = computed(() => snapshot.value?.prompt ?? [])
 const knowledgeStore = computed(() => snapshot.value?.knowledgeStore ?? [])
+const toolCalls = computed(() => snapshot.value?.toolCalls ?? [])
 
-const searchHistory = computed(() =>
-  traces.value
-    .filter(t => t.searchTrace?.searched)
-    .map(t => ({
-      id: t.id,
-      timestamp: t.timestamp,
-      userInput: t.userInput,
-      query: t.searchTrace.query,
-      status: t.searchTrace.status,
-      snippetCount: t.searchTrace.snippetCount,
-      tripleCount: t.searchTrace.extractedTriples?.length ?? 0,
-    }))
-)
+const preLlmResearch = computed(() => {
+  const trace = searchTrace.value
+  return trace?.searched && trace.status !== 'planner_skip' && trace.status !== 'disabled'
+})
 
 const requestTypeLabel = {
   chat: 'Chat',
@@ -157,7 +157,22 @@ watch(hideMetaRequests, () => {
   fetchData()
 })
 
+async function fetchUiInfo() {
+  try {
+    const res = await fetch('/api/debug/ui-info')
+    if (res.ok) {
+      const info = await res.json()
+      if (info.retriever) {
+        retrieverHint.value = info.retriever
+      }
+    }
+  } catch {
+    // defaults remain
+  }
+}
+
 onMounted(() => {
+  fetchUiInfo()
   fetchData()
   startPolling()
 })
@@ -177,6 +192,20 @@ function formatTime(iso) {
 
 function badgeClass(type) {
   return `badge badge-${type ?? 'chat'}`
+}
+
+function sourceLabel(source) {
+  if (source === 'store') return 'Knowledge Store'
+  if (source === 'web') return 'Websuche'
+  if (source === 'CHAT') return 'Chat'
+  if (source === 'WEB_SEARCH') return 'Websuche'
+  return source || '—'
+}
+
+function sourceBadgeClass(source) {
+  if (source === 'store' || source === 'CHAT') return 'badge-source-store'
+  if (source === 'web' || source === 'WEB_SEARCH') return 'badge-source-web'
+  return 'badge-source-unknown'
 }
 </script>
 
@@ -246,7 +275,8 @@ function badgeClass(type) {
           >
             <span class="trace-time">{{ formatTime(trace.timestamp) }}</span>
             <span :class="badgeClass(trace.requestType)">{{ requestTypeLabel[trace.requestType] ?? trace.requestType }}</span>
-            <span v-if="trace.searchTrace?.searched" class="badge badge-search" title="Websuche">🔍</span>
+            <span v-if="trace.searchTrace?.searched && trace.searchTrace?.status !== 'planner_skip' && trace.searchTrace?.status !== 'disabled'" class="badge badge-search" title="Pre-LLM Recherche">🔍</span>
+            <span v-if="trace.toolCalls?.length" class="badge badge-tool" :title="`${trace.toolCalls.length} Tool-Call(s)`">🛠 {{ trace.toolCalls.length }}</span>
             <span class="trace-preview">{{ previewInput(trace.userInput) }}</span>
           </button>
         </div>
@@ -271,7 +301,11 @@ function badgeClass(type) {
         </section>
 
         <section class="panel">
-          <h2>Kontext (Retriever)</h2>
+          <h2>Kontext (Retriever / Knowledge Store)</h2>
+          <p class="store-hint">
+            Facts aus den letzten {{ retrieverHint.minTurns }} Turn(s), min. {{ retrieverHint.minStatements }},
+            max. {{ retrieverHint.maxStatements }} — im Prompt max. {{ retrieverHint.maxKnowledge }} (app.retriever.*).
+          </p>
           <ul v-if="retrievedContext.length">
             <li v-for="(line, i) in retrievedContext" :key="i"><code>{{ line }}</code></li>
           </ul>
@@ -279,53 +313,73 @@ function badgeClass(type) {
         </section>
 
         <section class="panel">
-          <h2>Websuche-Historie</h2>
-          <p v-if="!searchHistory.length" class="empty">Noch keine Websuchen in dieser Conversation.</p>
-          <ul v-else class="search-history">
-            <li v-for="entry in searchHistory" :key="entry.id">
-              <button type="button" class="search-history-item" @click="selectTrace(traces.find(t => t.id === entry.id))">
-                <span class="trace-time">{{ formatTime(entry.timestamp) }}</span>
-                <code>{{ entry.query }}</code>
-                <span class="search-meta">{{ entry.status }} · {{ entry.snippetCount }} Snippets · {{ entry.tripleCount }} Triples</span>
-              </button>
-            </li>
-          </ul>
-        </section>
+          <h2>Pre-LLM Recherche</h2>
+          <p class="store-hint">Daten vor dem LLM-Aufruf — aus Knowledge Store oder externer Websuche (max. {{ retrieverHint.maxSearch }} Search-Triples).</p>
+          <p v-if="!preLlmResearch" class="empty">Keine Pre-Search für diesen Turn (Planner hat übersprungen oder Suche deaktiviert).</p>
 
-        <section class="panel">
-          <h2>Web-Suche (aktueller Turn)</h2>
-          <template v-if="searchTrace?.searched">
+          <article v-else class="search-turn-block">
+            <header class="search-header">
+              <h3>Pre-Search</h3>
+              <span v-if="searchTrace.contextSource" :class="['badge', sourceBadgeClass(searchTrace.contextSource)]">
+                {{ sourceLabel(searchTrace.contextSource) }}
+              </span>
+            </header>
             <p><strong>Status:</strong> {{ searchTrace.status }} — {{ searchTrace.detail }}</p>
-            <p><strong>Query:</strong> <code>{{ searchTrace.query }}</code></p>
-            <p><strong>Snippets:</strong> {{ searchTrace.snippetCount }}</p>
+            <p><strong>Query:</strong> <code>{{ searchTrace.query || '—' }}</code></p>
+            <p v-if="searchTrace.contextSource === 'store'">
+              <strong>Quelle:</strong> Knowledge Store — keine externe Websuche nötig.
+            </p>
+            <p v-else-if="searchTrace.contextSource === 'web'">
+              <strong>Snippets:</strong> {{ searchTrace.snippetCount }}
+            </p>
             <p v-if="searchTrace.promptContext"><strong>Prompt-Kontext:</strong></p>
             <pre v-if="searchTrace.promptContext" class="text-block">{{ searchTrace.promptContext }}</pre>
             <div v-if="searchTrace.snippets?.length" class="snippet-list">
-              <article v-for="(snippet, i) in searchTrace.snippets" :key="'s' + i" class="snippet-card">
-                <h3>{{ snippet.title || `Treffer ${i + 1}` }}</h3>
+              <article v-for="(snippet, i) in searchTrace.snippets" :key="'pre-' + i" class="snippet-card">
+                <h4>{{ snippet.title || `Treffer ${i + 1}` }}</h4>
                 <a v-if="snippet.url" :href="snippet.url" target="_blank" rel="noopener">{{ snippet.url }}</a>
                 <pre class="text-block snippet-preview">{{ snippet.text }}</pre>
               </article>
             </div>
-            <p v-else class="empty">Keine Snippet-Details verfügbar.</p>
-            <template v-if="searchTrace.extractedTriples?.length">
-              <p><strong>Extrahierte Triples:</strong></p>
+            <template v-if="searchTrace.storeFacts?.length">
+              <p><strong>Store-Treffer (nur gelesen, nicht re-gespeichert):</strong></p>
               <ul>
-                <li v-for="(line, i) in searchTrace.extractedTriples" :key="i"><code>{{ line }}</code></li>
+                <li v-for="(line, i) in searchTrace.storeFacts" :key="'store-' + i"><code>{{ line }}</code></li>
+              </ul>
+            </template>
+            <template v-else-if="searchTrace.extractedTriples?.length">
+              <p><strong>Extrahierte Triples (Websuche → Store):</strong></p>
+              <ul>
+                <li v-for="(line, i) in searchTrace.extractedTriples" :key="'pre-t' + i"><code>{{ line }}</code></li>
               </ul>
             </template>
             <p v-else-if="searchTrace?.detail?.includes('folgt nach')" class="search-hint">
-              Triple-Extraktion läuft im Hintergrund (nach der Antwort) — Auto-Refresh zeigt sie gleich.
+              Triple-Extraktion läuft im Hintergrund — Auto-Refresh zeigt sie gleich.
             </p>
-            <p v-else-if="searchTrace?.promptContext" class="search-hint">
-              Keine RDF-Triples — die Recherche wurde als Textauszüge in den System-Prompt übernommen (siehe „Prompt-Kontext“).
-            </p>
-            <p v-else class="empty">Keine Triples aus Snippets extrahiert.</p>
-          </template>
-          <template v-else-if="searchTrace">
-            <p class="search-status"><strong>{{ searchTrace.status }}:</strong> {{ searchTrace.detail }}</p>
-          </template>
-          <p v-else class="empty">Keine Websuche für diesen Turn.</p>
+          </article>
+        </section>
+
+        <section class="panel">
+          <h2>Tool-Calls ({{ toolCalls.length }})</h2>
+          <p class="store-hint">Vom LLM ausgelöst — immer externe Websuche (Knowledge Store wird ignoriert). Treffer werden nachträglich als Triples gespeichert.</p>
+          <p v-if="!toolCalls.length" class="empty">Keine Tool-Aufrufe in diesem Turn.</p>
+          <div v-else class="tool-call-list">
+            <article v-for="(call, i) in toolCalls" :key="i" class="tool-call-card" :class="{ 'tool-error': call.error }">
+              <header class="tool-call-header">
+                <strong>Schritt {{ call.step }}:</strong> <code>{{ call.toolName }}</code>
+                <span v-if="call.toolName === 'web_search' && call.dataSource" :class="['badge', sourceBadgeClass(call.dataSource)]">
+                  {{ sourceLabel(call.dataSource) }}
+                </span>
+                <span class="tool-duration">{{ call.durationMs }} ms</span>
+              </header>
+              <p v-if="call.toolName === 'web_search' && call.searchQuery">
+                <strong>Query:</strong> <code>{{ call.searchQuery }}</code>
+              </p>
+              <p v-if="call.error"><strong>Status:</strong> Fehler</p>
+              <p><strong>Ergebnis (LLM-Kontext):</strong></p>
+              <pre class="text-block">{{ call.result }}</pre>
+            </article>
+          </div>
         </section>
 
         <section class="panel">
@@ -355,6 +409,7 @@ function badgeClass(type) {
                 <th>Predicate</th>
                 <th>Object</th>
                 <th>Turn</th>
+                <th>Quelle</th>
                 <th>Zeit</th>
               </tr>
             </thead>
@@ -364,6 +419,7 @@ function badgeClass(type) {
                 <td>{{ s.predicate }}</td>
                 <td>{{ s.object }}</td>
                 <td><code>{{ s.turnId?.slice(0, 8) }}</code></td>
+                <td><span :class="['badge', sourceBadgeClass(s.source)]">{{ sourceLabel(s.source) }}</span></td>
                 <td>{{ formatTime(s.createdAt) }}</td>
               </tr>
             </tbody>
@@ -579,29 +635,49 @@ function badgeClass(type) {
   color: #1d4ed8;
 }
 
-.search-history {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.badge-source-store {
+  background: #dcfce7;
+  color: #166534;
 }
 
-.search-history-item {
+.badge-source-web {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.badge-source-unknown {
+  background: #f4f4f5;
+  color: #52525b;
+}
+
+.search-header {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.25rem;
-  width: 100%;
+  align-items: center;
+  gap: 0.5rem;
   margin-bottom: 0.5rem;
-  padding: 0.5rem 0.6rem;
-  border: 1px solid #e4e4e7;
-  border-radius: 6px;
-  background: #fafafa;
-  cursor: pointer;
-  text-align: left;
 }
 
-.search-history-item:hover {
-  background: #eff6ff;
+.search-header h3 {
+  margin: 0;
+}
+
+.search-turn-block {
+  border: 1px solid #e4e4e7;
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  background: #fafafa;
+}
+
+.search-turn-block h3,
+.search-turn-block h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.9375rem;
+}
+
+.badge-tool {
+  background: #ede9fe;
+  color: #5b21b6;
 }
 
 .search-meta {
@@ -639,6 +715,36 @@ function badgeClass(type) {
   max-height: 12rem;
   overflow-y: auto;
   font-size: 0.8125rem;
+}
+
+.tool-call-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.tool-call-card {
+  border: 1px solid #e4e4e7;
+  border-radius: 8px;
+  padding: 0.75rem;
+  background: #fafafa;
+}
+
+.tool-call-card.tool-error {
+  border-color: #c62828;
+}
+
+.tool-call-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.tool-duration {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: #71717a;
 }
 
 .store-hint {

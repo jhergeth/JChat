@@ -1,5 +1,6 @@
 package name.hergeth.jchat.ai.search;
 
+import name.hergeth.jchat.ai.model.FactSource;
 import name.hergeth.jchat.ai.model.Statement;
 
 import java.time.Instant;
@@ -43,7 +44,8 @@ final class WikiOfficeHolderExtractor {
                             holder.jurisdiction().isBlank() ? holder.office() : holder.jurisdiction(),
                             conversationId,
                             turnId,
-                            now));
+                            now,
+                            FactSource.WEB_SEARCH));
                 }
             });
         }
