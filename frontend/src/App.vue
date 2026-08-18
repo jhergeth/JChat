@@ -11,7 +11,7 @@ const error = ref(null)
 const traces = ref([])
 const selectedTraceId = ref(null)
 
-const UI_VERSION = '2026-08-18b'
+const UI_VERSION = '2026-08-18c'
 
 let timer = null
 
@@ -52,6 +52,28 @@ const requestTypeLabel = {
   chat: 'Chat',
   follow_up: 'Follow-up',
   meta: 'Meta',
+}
+
+const conversationOptions = computed(() => {
+  const result = [...conversationIds.value]
+  const current = conversationId.value.trim()
+  if (current && !result.includes(current)) {
+    result.unshift(current)
+  }
+  if (!result.length) {
+    result.push(current || 'default')
+  }
+  return result
+})
+
+function applyConversationId(id) {
+  const next = id.trim()
+  if (!next || next === conversationId.value) {
+    return
+  }
+  conversationId.value = next
+  followLatestChat.value = true
+  fetchData()
 }
 
 function previewInput(text) {
@@ -166,18 +188,24 @@ function badgeClass(type) {
 
       <div class="controls">
         <label>
-          Conversation ID
+          Conversation
+          <select
+            :value="conversationId"
+            class="conversation-select"
+            @change="applyConversationId($event.target.value)"
+          >
+            <option v-for="id in conversationOptions" :key="id" :value="id">{{ id }}</option>
+          </select>
+        </label>
+        <label>
+          Oder ID eingeben
           <input
             v-model="conversationId"
             type="text"
-            list="conversation-id-list"
             placeholder="default"
             autocomplete="off"
             @keyup.enter="fetchData"
           />
-          <datalist id="conversation-id-list">
-            <option v-for="id in conversationIds" :key="id" :value="id" />
-          </datalist>
         </label>
         <button type="button" @click="fetchData" :disabled="loading">Aktualisieren</button>
         <label class="checkbox">
@@ -394,11 +422,18 @@ function badgeClass(type) {
   font-size: 0.875rem;
 }
 
-.controls input[type='text'] {
+.controls input[type='text'],
+.controls select {
   padding: 0.4rem 0.6rem;
   border: 1px solid #d4d4d8;
   border-radius: 6px;
   min-width: 240px;
+  background: #fff;
+}
+
+.conversation-select {
+  min-width: 280px;
+  cursor: pointer;
 }
 
 .controls button {

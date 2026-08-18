@@ -135,6 +135,9 @@ Ausführen:
 ```bash
 ./gradlew runScenarios
 
+# Nur ein Szenario:
+./gradlew runScenarios --args='--scenario web-search'
+
 # Mit Validierung gegen *.expected.yaml:
 ./gradlew runScenarios --args='--validate'
 

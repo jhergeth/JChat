@@ -49,6 +49,25 @@ public final class ScenarioLoader {
         return new ScenarioDefinition(name, conversationId, description, turns);
     }
 
+    /** Lädt ein Szenario per Dateiname (z. B. {@code web-search}) oder YAML-{@code name}-Feld. */
+    public static ScenarioDefinition loadByName(Path scenariosDir, String scenarioName) throws IOException {
+        if (scenarioName == null || scenarioName.isBlank()) {
+            throw new IOException("Scenario name must not be blank");
+        }
+        String trimmed = scenarioName.trim();
+        String fileBase = trimmed.endsWith(".yaml") ? trimmed.substring(0, trimmed.length() - 5) : trimmed;
+        Path byFile = scenariosDir.resolve(fileBase + ".yaml");
+        if (Files.isRegularFile(byFile)) {
+            return loadScenario(byFile);
+        }
+        for (ScenarioDefinition scenario : loadAll(scenariosDir)) {
+            if (scenario.name().equals(trimmed) || scenario.name().equals(fileBase)) {
+                return scenario;
+            }
+        }
+        throw new IOException("Scenario not found: " + scenarioName + " in " + scenariosDir);
+    }
+
     public static Optional<ScenarioExpected> loadExpected(Path scenarioFile) throws IOException {
         Path expectedFile = Path.of(
                 scenarioFile.toString().replace(".yaml", ".expected.yaml"));

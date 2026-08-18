@@ -3,5 +3,9 @@ conversationId: scenario-web-search
 description: Faktenfrage mit Websuche (Wikipedia, optional xnsearch)
 turns:
   - "Was ist die Hauptstadt von Australien?"
-  - "Und wie viele Einwohner hat diese Stadt ungefaehr?"
-  - "Danke — merke dir, dass ich gerade Geographie lerne."
+  - "Und wie viele Einwohner hat diese Stadt ungefähr?"
+  - "Wer ist aktuell der Bundeskanzler von Deutschland?"
+  - "wie heisst seine Frau?"
+  - "Wer ist der aktuelle Präsident der USA?"
+  - "wie heisst die Person, die sein Pressesprecher ist?"
+  - "Welche Mitglieder hat heute die US-amerikanische Regierung (Köpfe der Ministerien)"

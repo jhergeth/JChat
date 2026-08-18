@@ -37,6 +37,9 @@ JChat muss laufen (`./gradlew run`):
 ```bash
 ./gradlew runScenarios
 
+# Nur ein Szenario (Dateiname ohne .yaml oder YAML-Feld name):
+./gradlew runScenarios --args='--scenario web-search'
+
 # Mit Validierung gegen *.expected.yaml:
 ./gradlew runScenarios --args='--validate'
 

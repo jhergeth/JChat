@@ -47,7 +47,7 @@ public class DebugController {
     @Get("/ui-info")
     public Map<String, Object> uiInfo() {
         return Map.of(
-                "uiVersion", "2026-08-18b",
+                "uiVersion", "2026-08-18c",
                 "features", List.of("turn-snapshot-store", "conversation-combobox", "dual-scroll-layout"));
     }
 

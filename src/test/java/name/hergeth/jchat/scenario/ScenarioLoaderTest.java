@@ -46,4 +46,17 @@ class ScenarioLoaderTest {
         assertNull(scenario.description());
         assertEquals(List.of("Turn 1"), scenario.turns());
     }
+
+    @Test
+    void loadByNameFindsScenarioFile(@TempDir Path tempDir) throws IOException {
+        Files.writeString(tempDir.resolve("web-search.yaml"), """
+                name: web-search
+                turns:
+                  - "Frage"
+                """);
+
+        ScenarioDefinition scenario = ScenarioLoader.loadByName(tempDir, "web-search");
+        assertEquals("web-search", scenario.name());
+        assertEquals(List.of("Frage"), scenario.turns());
+    }
 }

@@ -2,6 +2,7 @@ package name.hergeth.jchat.scenario;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 
 public final class ScenarioRunnerMain {
 
@@ -17,7 +18,7 @@ public final class ScenarioRunnerMain {
                 config.validate(),
                 config.semanticValidate());
 
-        List<ScenarioRunResult> results = runner.runAll();
+        List<ScenarioRunResult> results = runner.runAll(config.scenario());
 
         int passed = 0;
         int failed = 0;
@@ -50,6 +51,7 @@ public final class ScenarioRunnerMain {
             String baseUrl,
             Path scenariosDir,
             Path outputDir,
+            Optional<String> scenario,
             boolean validate,
             boolean semanticValidate) {
 
@@ -57,6 +59,7 @@ public final class ScenarioRunnerMain {
             String baseUrl = "http://localhost:8080";
             Path scenariosDir = Path.of("scenarios");
             Path outputDir = Path.of("build/scenario-runs");
+            Optional<String> scenario = Optional.empty();
             boolean validate = false;
             boolean semanticValidate = false;
 
@@ -65,6 +68,7 @@ public final class ScenarioRunnerMain {
                     case "--base-url" -> baseUrl = requireValue(args, ++i, "--base-url");
                     case "--scenarios" -> scenariosDir = Path.of(requireValue(args, ++i, "--scenarios"));
                     case "--output" -> outputDir = Path.of(requireValue(args, ++i, "--output"));
+                    case "--scenario" -> scenario = Optional.of(requireValue(args, ++i, "--scenario"));
                     case "--validate" -> validate = true;
                     case "--semantic-validate" -> semanticValidate = true;
                     case "--help" -> {
@@ -77,7 +81,7 @@ public final class ScenarioRunnerMain {
             if (semanticValidate && !validate) {
                 throw new IllegalArgumentException("--semantic-validate requires --validate");
             }
-            return new Config(baseUrl, scenariosDir, outputDir, validate, semanticValidate);
+            return new Config(baseUrl, scenariosDir, outputDir, scenario, validate, semanticValidate);
         }
 
         private static String requireValue(String[] args, int index, String flag) {
@@ -94,6 +98,7 @@ public final class ScenarioRunnerMain {
                       --base-url URL          JChat base URL (default: http://localhost:8080)
                       --scenarios DIR         Scenario YAML directory (default: scenarios)
                       --output DIR            Output directory (default: build/scenario-runs)
+                      --scenario NAME         Nur dieses Szenario (Dateiname oder YAML name)
                       --validate              Check *.expected.yaml files
                       --semantic-validate     LLM fallback for unmatched triples (requires --validate)
                       --help                  Show this help

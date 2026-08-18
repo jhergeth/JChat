@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Optional;
 
 public class ScenarioRunner {
 
@@ -42,8 +43,14 @@ public class ScenarioRunner {
     }
 
     public List<ScenarioRunResult> runAll() throws IOException, InterruptedException {
+        return runAll(Optional.empty());
+    }
+
+    public List<ScenarioRunResult> runAll(Optional<String> onlyScenario) throws IOException, InterruptedException {
         Files.createDirectories(outputDir);
-        List<ScenarioDefinition> scenarios = ScenarioLoader.loadAll(scenariosDir);
+        List<ScenarioDefinition> scenarios = onlyScenario.isPresent()
+                ? List.of(ScenarioLoader.loadByName(scenariosDir, onlyScenario.get()))
+                : ScenarioLoader.loadAll(scenariosDir);
         List<ScenarioRunResult> results = new ArrayList<>();
         for (ScenarioDefinition scenario : scenarios) {
             System.out.printf("Running scenario %s (%s)...%n", scenario.name(), scenario.conversationId());
