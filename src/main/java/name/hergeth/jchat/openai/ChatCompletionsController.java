@@ -7,6 +7,8 @@ import name.hergeth.jchat.ai.SystemPromptProvider;
 import name.hergeth.jchat.ai.TurnFactory;
 import name.hergeth.jchat.ai.TurnProcessor;
 import name.hergeth.jchat.ai.context.AmbientContext;
+import name.hergeth.jchat.ai.context.ConversationContextResolver;
+import name.hergeth.jchat.ai.context.ResolvedContext;
 import name.hergeth.jchat.ai.context.SessionContextHints;
 import name.hergeth.jchat.ai.context.SessionContextResolver;
 import name.hergeth.jchat.ai.llm.AiServiceFactory;
@@ -84,6 +86,9 @@ public class ChatCompletionsController {
     SessionContextResolver sessionContextResolver;
 
     @Inject
+    ConversationContextResolver conversationContextResolver;
+
+    @Inject
     ToolRegistry toolRegistry;
 
     @Inject
@@ -108,13 +113,16 @@ public class ChatCompletionsController {
         boolean isChat = RequestClassifier.isChat(requestType);
 
         SearchTrace searchTrace = SearchTrace.disabled("kein Chat-Request");
+        ResolvedContext resolvedContext = ResolvedContext.plain(lastUserMessage);
         if (isChat) {
+            resolvedContext = conversationContextResolver.resolve(
+                    conversationId, request.messages(), lastUserMessage);
             searchTrace = searchOrchestrator.maybeSearch(
-                    conversationId, lastUserMessage, request.messages(), ambientContext);
+                    conversationId, resolvedContext, request.messages(), ambientContext);
         }
 
         List<name.hergeth.jchat.ai.model.Statement> retrievedStatements = isChat
-                ? retriever.retrieve(conversationId, lastUserMessage)
+                ? retriever.retrieve(conversationId, resolvedContext)
                 : List.of();
 
         List<String> retrievedContext = retrievedStatements.stream()
@@ -163,7 +171,7 @@ public class ChatCompletionsController {
 
             String debugTraceId = debugTraceService.record(
                     conversationId, requestType, lastUserMessage, retrievedContext, ambientContext,
-                    messages, answer, provider, searchTrace, toolCalls);
+                    messages, answer, provider, searchTrace, toolCalls, resolvedContext);
 
             searchPostProcessor.scheduleAfterAnswer(
                     conversationId, lastUserMessage, answer, provider, searchTrace, debugTraceId, turnId);
@@ -172,7 +180,7 @@ public class ChatCompletionsController {
         } else {
             debugTraceService.record(
                     conversationId, requestType, lastUserMessage, retrievedContext, ambientContext,
-                    messages, answer, provider, searchTrace, toolCalls);
+                    messages, answer, provider, searchTrace, toolCalls, resolvedContext);
         }
 
         ChatMessage responseMessage = new ChatMessage("assistant", answer);

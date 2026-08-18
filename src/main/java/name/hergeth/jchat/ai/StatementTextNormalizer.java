@@ -1,5 +1,7 @@
 package name.hergeth.jchat.ai;
 
+import name.hergeth.jchat.ai.model.Statement;
+
 import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -32,7 +34,16 @@ final class StatementTextNormalizer {
     }
 
     static String factKey(String subject, String predicate) {
-        return compactSubjectKey(subject) + "|" + normalizePredicate(predicate);
+        return entityKey(subject) + "|" + normalizePredicate(predicate);
+    }
+
+    static String entityKey(String label) {
+        return compactSubjectKey(label == null ? "" : label);
+    }
+
+    static String statementDedupKey(Statement statement) {
+        return factKey(statement.subject(), statement.predicate()) + "|"
+                + normalizeObject(statement.object()).toLowerCase(Locale.ROOT);
     }
 
     private static String compactSubjectKey(String subject) {

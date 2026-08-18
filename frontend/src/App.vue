@@ -306,6 +306,13 @@ function sourceBadgeClass(source) {
             Facts aus den letzten {{ retrieverHint.minTurns }} Turn(s), min. {{ retrieverHint.minStatements }},
             max. {{ retrieverHint.maxStatements }} — im Prompt max. {{ retrieverHint.maxKnowledge }} (app.retriever.*).
           </p>
+          <template v-if="snapshot?.resolvedContext?.focusEntities?.length">
+            <p><strong>Aufgelöste Entitäten:</strong> {{ snapshot.resolvedContext.focusEntities.join(', ') }}</p>
+            <p><strong>Aufgelöste Query:</strong> <code>{{ snapshot.resolvedContext.resolvedQuery || '—' }}</code></p>
+            <p v-if="snapshot.resolvedContext.resolutionNotes">
+              <strong>Coreference:</strong> {{ snapshot.resolvedContext.resolutionNotes }}
+            </p>
+          </template>
           <ul v-if="retrievedContext.length">
             <li v-for="(line, i) in retrievedContext" :key="i"><code>{{ line }}</code></li>
           </ul>

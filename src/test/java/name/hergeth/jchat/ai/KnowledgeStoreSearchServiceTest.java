@@ -1,5 +1,6 @@
 package name.hergeth.jchat.ai;
 
+import name.hergeth.jchat.ai.context.ResolvedContext;
 import name.hergeth.jchat.ai.model.Statement;
 import org.junit.jupiter.api.Test;
 
@@ -73,6 +74,26 @@ class KnowledgeStoreSearchServiceTest {
                 "US Regierung 2026 Mitglieder");
 
         assertTrue(match.isEmpty());
+    }
+
+    @Test
+    void matchesSpouseFactsFromEntityBundle() {
+        InMemoryKnowledgeStore store = new InMemoryKnowledgeStore();
+        store.add(stmt("Friedrich Merz", "hat_position", "Bundeskanzler"));
+        store.add(stmt("Friedrich Merz", "hat_ehepartner", "Uschi Merz"));
+        KnowledgeStoreSearchService service = new KnowledgeStoreSearchService(store, new KnowledgeLimits(500, 12, 6, 3, 12, 6));
+
+        ResolvedContext context = new ResolvedContext(
+                "wie heisst seine Frau?",
+                "frau Friedrich Merz",
+                List.of("friedrichmerz"),
+                List.of("Friedrich Merz"),
+                "pronoun->Friedrich Merz");
+
+        Optional<KnowledgeStoreMatch> match = service.tryMatch("default", context, "Ehefrau Friedrich Merz");
+
+        assertTrue(match.isPresent());
+        assertTrue(match.get().promptContext().contains("Uschi Merz"));
     }
 
     private static Statement stmt(String subject, String predicate, String object) {

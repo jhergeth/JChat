@@ -1,6 +1,7 @@
 package name.hergeth.jchat.ai;
 
 import io.micronaut.context.annotation.Replaces;
+import name.hergeth.jchat.ai.context.ResolvedContext;
 import name.hergeth.jchat.ai.model.Statement;
 import jakarta.inject.Singleton;
 
@@ -17,7 +18,7 @@ public class KnowledgeStoreRetriever implements Retriever {
     }
 
     @Override
-    public List<Statement> retrieve(String conversationId, String query) {
+    public List<Statement> retrieve(String conversationId, ResolvedContext context) {
         return knowledgeStore.all(conversationId);
     }
 }

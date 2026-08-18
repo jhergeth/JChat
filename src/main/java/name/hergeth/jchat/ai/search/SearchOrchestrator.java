@@ -4,6 +4,7 @@ import io.micronaut.context.annotation.Value;
 import jakarta.inject.Singleton;
 import name.hergeth.jchat.ai.KnowledgeStoreMatch;
 import name.hergeth.jchat.ai.KnowledgeStoreSearchService;
+import name.hergeth.jchat.ai.context.ResolvedContext;
 import name.hergeth.jchat.ai.context.AmbientContext;
 import name.hergeth.jchat.ai.model.Statement;
 import name.hergeth.jchat.openai.dto.ChatMessage;
@@ -57,6 +58,14 @@ public class SearchOrchestrator {
             String userMessage,
             List<ChatMessage> messages,
             AmbientContext ambientContext) {
+        return maybeSearch(conversationId, ResolvedContext.plain(userMessage), messages, ambientContext);
+    }
+
+    public SearchTrace maybeSearch(
+            String conversationId,
+            ResolvedContext context,
+            List<ChatMessage> messages,
+            AmbientContext ambientContext) {
         if (!enabled) {
             return SearchTrace.disabled("app.search.enabled=false");
         }
@@ -66,17 +75,18 @@ public class SearchOrchestrator {
             return SearchTrace.disabled(msg);
         }
 
+        String userMessage = context.userMessage();
         List<String> recentUserMessages = recentUserMessages(messages);
 
         try {
-            SearchDecision decision = resolveDecision(userMessage, recentUserMessages, ambientContext);
+            SearchDecision decision = resolveDecision(context, recentUserMessages, ambientContext);
             if (!decision.search() || decision.query().isBlank()) {
                 LOG.debug("Search skipped by planner/heuristic for conversation {}", conversationId);
                 return SearchTrace.plannerSkip();
             }
 
             if (knowledgeStoreFirst) {
-                var storeHit = knowledgeStoreSearch.tryMatch(conversationId, userMessage, decision.query());
+                var storeHit = knowledgeStoreSearch.tryMatch(conversationId, context, decision.query());
                 if (storeHit.isPresent()) {
                     return traceFromKnowledgeStore(storeHit.get());
                 }
@@ -90,9 +100,10 @@ public class SearchOrchestrator {
     }
 
     private SearchDecision resolveDecision(
-            String userMessage,
+            ResolvedContext context,
             List<String> recentUserMessages,
             AmbientContext ambientContext) {
+        String userMessage = context.userMessage();
         if (!SearchIntentHeuristic.shouldSearch(userMessage, recentUserMessages)) {
             LOG.debug("Search skipped by heuristic — no LLM planner call");
             return SearchDecision.skip();
@@ -105,7 +116,9 @@ public class SearchOrchestrator {
             return SearchDecision.go(query);
         }
 
-        String fallback = SearchIntentHeuristic.fallbackQuery(userMessage, recentUserMessages);
+        String fallback = context.hasPronounResolution() || context.hasFocusEntities()
+                ? SearchQueryNormalizer.sanitize(context.queryForScoring())
+                : SearchIntentHeuristic.fallbackQuery(userMessage, recentUserMessages);
         if (!fallback.isBlank()) {
             String query = SearchQueryNormalizer.sanitize(fallback);
             LOG.info("Search heuristic fallback query: {}", query);

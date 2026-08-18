@@ -1,5 +1,6 @@
 package name.hergeth.jchat.ai;
 
+import name.hergeth.jchat.ai.context.ResolvedContext;
 import name.hergeth.jchat.ai.model.Statement;
 
 import java.util.List;
@@ -10,7 +11,7 @@ import java.util.Optional;
 public class KnowledgeStoreSearchService {
 
     private static final int STRONG_MATCH_SCORE = 4;
-    private static final int LIST_MATCH_SCORE = 3;
+    private static final int ENTITY_BUNDLE_SCORE = 5;
     private static final int LIST_MIN_FACTS = 3;
 
     private final KnowledgeStore knowledgeStore;
@@ -25,13 +26,27 @@ public class KnowledgeStoreSearchService {
             String conversationId,
             String userMessage,
             String searchQuery) {
+        return tryMatch(conversationId, ResolvedContext.plain(userMessage), searchQuery);
+    }
+
+    public Optional<KnowledgeStoreMatch> tryMatch(
+            String conversationId,
+            ResolvedContext context,
+            String searchQuery) {
         if (conversationId == null || conversationId.isBlank()) {
             return Optional.empty();
         }
-        String lookupQuery = combinedQuery(userMessage, searchQuery);
+        ResolvedContext safeContext = context == null ? ResolvedContext.plain("") : context;
+        String userMessage = safeContext.userMessage();
+        String lookupQuery = combinedQuery(safeContext.queryForScoring(), searchQuery);
         List<Statement> all = knowledgeStore.all(conversationId);
         if (all.isEmpty()) {
             return Optional.empty();
+        }
+
+        Optional<KnowledgeStoreMatch> entityMatch = tryEntityBundleMatch(safeContext, searchQuery, all);
+        if (entityMatch.isPresent()) {
+            return entityMatch;
         }
 
         List<StatementRelevanceScorer.RankedStatement> ranked =
@@ -72,6 +87,48 @@ public class KnowledgeStoreSearchService {
         String query = searchQuery == null || searchQuery.isBlank() ? userMessage : searchQuery;
         int topScore = relevant.get(0).score();
         return Optional.of(new KnowledgeStoreMatch(query.trim(), statements, promptContext, topScore));
+    }
+
+    private Optional<KnowledgeStoreMatch> tryEntityBundleMatch(
+            ResolvedContext context,
+            String searchQuery,
+            List<Statement> all) {
+        if (!context.hasFocusEntities()) {
+            return Optional.empty();
+        }
+        if (!context.hasPronounResolution() && !containsRelationTerm(context.userMessage())) {
+            return Optional.empty();
+        }
+        EntityIndex index = EntityIndex.from(all);
+        List<Statement> bundle = EntityFactExpander.expand(
+                index, context.focusEntityKeys(), limits.maxKnowledgeInContext());
+        if (bundle.isEmpty()) {
+            return Optional.empty();
+        }
+        String promptContext = KnowledgeStorePromptFormatter.format(bundle);
+        if (promptContext.isBlank()) {
+            return Optional.empty();
+        }
+        String query = context.queryForScoring();
+        if (searchQuery != null && !searchQuery.isBlank()) {
+            query = searchQuery.trim();
+        }
+        return Optional.of(new KnowledgeStoreMatch(query, bundle, promptContext, ENTITY_BUNDLE_SCORE));
+    }
+
+    private static boolean containsRelationTerm(String userMessage) {
+        if (userMessage == null || userMessage.isBlank()) {
+            return false;
+        }
+        String lower = userMessage.toLowerCase(Locale.ROOT);
+        return lower.contains("frau")
+                || lower.contains("ehefrau")
+                || lower.contains("ehemann")
+                || lower.contains("pressesprecher")
+                || lower.contains("partner")
+                || lower.contains("tochter")
+                || lower.contains("sohn")
+                || lower.contains("kind");
     }
 
     private static boolean isCabinetOrGovernmentFact(Statement statement) {

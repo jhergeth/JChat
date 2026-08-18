@@ -27,6 +27,13 @@ final class SearchIntentHeuristic {
             "\\b(usa|amerika|deutschland|österreich|oesterreich|frankreich|schweiz|"
                     + "vereinigten staaten|vereinigte staaten|uk|england)\\b",
             Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+    private static final Pattern POSSESSIVE_PRONOUN = Pattern.compile(
+            "\\b(sein|seine|seinem|seinen|seiner|ihr|ihre|ihrem|ihren|ihrer)\\b",
+            Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+    private static final Pattern RELATION_HINT = Pattern.compile(
+            "\\b(frau|ehefrau|ehemann|mann|pressesprecher|pressesprecherin|partner|"
+                    + "ehepartner|tochter|sohn|kind|vater|mutter)\\b",
+            Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
 
     private SearchIntentHeuristic() {}
 
@@ -39,6 +46,9 @@ final class SearchIntentHeuristic {
             return true;
         }
         if (looksLikeCountryFollowUp(lower, recentUserMessages)) {
+            return true;
+        }
+        if (looksLikePronounFollowUp(lower, recentUserMessages)) {
             return true;
         }
         if (RESEARCH_AGAIN_PATTERN.matcher(lower).find() && hasPriorPublicFactQuestion(recentUserMessages)) {
@@ -83,6 +93,16 @@ final class SearchIntentHeuristic {
             return hasPriorPublicFactQuestion(recentUserMessages);
         }
         return lower.length() <= 40 && hasPriorPublicFactQuestion(recentUserMessages);
+    }
+
+    private static boolean looksLikePronounFollowUp(String lower, List<String> recentUserMessages) {
+        if (!POSSESSIVE_PRONOUN.matcher(lower).find()) {
+            return false;
+        }
+        if (!RELATION_HINT.matcher(lower).find() && !lower.contains("wie heisst") && !lower.contains("wie heißt")) {
+            return false;
+        }
+        return recentUserMessages != null && recentUserMessages.size() > 1;
     }
 
     private static boolean hasPriorPublicFactQuestion(List<String> recentUserMessages) {

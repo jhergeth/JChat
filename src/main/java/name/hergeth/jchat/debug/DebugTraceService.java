@@ -1,6 +1,7 @@
 package name.hergeth.jchat.debug;
 
 import name.hergeth.jchat.ai.KnowledgeStore;
+import name.hergeth.jchat.ai.context.ResolvedContext;
 import name.hergeth.jchat.ai.context.AmbientContext;
 import name.hergeth.jchat.ai.model.Statement;
 import name.hergeth.jchat.ai.search.SearchTrace;
@@ -35,7 +36,7 @@ public class DebugTraceService {
             String chatProvider,
             SearchTrace searchTrace) {
         return record(conversationId, requestType, userInput, retrievedContext, ambientContext,
-                prompt, llmResponse, chatProvider, searchTrace, List.of());
+                prompt, llmResponse, chatProvider, searchTrace, List.of(), null);
     }
 
     public String record(
@@ -49,6 +50,22 @@ public class DebugTraceService {
             String chatProvider,
             SearchTrace searchTrace,
             List<ToolExecutionRecord> toolCalls) {
+        return record(conversationId, requestType, userInput, retrievedContext, ambientContext,
+                prompt, llmResponse, chatProvider, searchTrace, toolCalls, null);
+    }
+
+    public String record(
+            String conversationId,
+            String requestType,
+            String userInput,
+            List<String> retrievedContext,
+            AmbientContext ambientContext,
+            List<ChatMessage> prompt,
+            String llmResponse,
+            String chatProvider,
+            SearchTrace searchTrace,
+            List<ToolExecutionRecord> toolCalls,
+            ResolvedContext resolvedContext) {
         String id = UUID.randomUUID().toString();
         TurnDebugSnapshot snapshot = new TurnDebugSnapshot(
                 id,
@@ -62,6 +79,7 @@ public class DebugTraceService {
                 llmResponse,
                 chatProvider,
                 SearchTraceView.from(searchTrace),
+                ResolvedContextView.from(resolvedContext, retrievedContext == null ? 0 : retrievedContext.size()),
                 toViews(knowledgeStore.all(conversationId)),
                 toToolViews(toolCalls));
         traceStore.add(snapshot);
@@ -89,6 +107,7 @@ public class DebugTraceService {
                 prior.llmResponse(),
                 prior.chatProvider(),
                 SearchTraceView.from(searchTrace),
+                prior.resolvedContext(),
                 prior.knowledgeStore(),
                 prior.toolCalls());
         traceStore.replace(updated);

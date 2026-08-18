@@ -33,14 +33,14 @@ app:
   knowledge:
     max-statements: 1000
   retriever:
-    max-statements: 20
-    min-statements: 10
-    min-turns: 3
-    max-knowledge: 12
-    max-search: 6
+    max-statements: 20  # maximal number of statements from history into context
+    min-statements: 10  # if min-turns do not deliver min-statements, then fill up until min-statements
+    min-turns: 3  # from the last min-turns all statements are pushed int the context
+    max-knowledge: 12 # max facts from knowledge store into context, with no relation to history
+    max-search: 6 # max statements from one websearch into context
   search:
     enabled: true
-    max-results: 5
+    max-results: 6
     knowledge-store-first: true
   agent:
     enabled: true
