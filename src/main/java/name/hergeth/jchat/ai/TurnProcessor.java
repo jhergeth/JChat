@@ -43,7 +43,7 @@ public class TurnProcessor {
 
         if (normalized.isEmpty()) {
             if (raw.isEmpty()) {
-                LOG.info("Knowledge store unchanged for {}: no triples extracted (turn {})",
+                LOG.debug("Knowledge store unchanged for {}: no triples extracted (turn {})",
                         turn.conversationId(), turn.turnId());
             } else {
                 LOG.warn("Knowledge store unchanged for {}: raw={}, all filtered (turn {})",
@@ -54,7 +54,7 @@ public class TurnProcessor {
 
         knowledgeStoreWriter.merge(turn.conversationId(), normalized, MAX_STATEMENTS);
 
-        LOG.info("Knowledge store updated for {}: raw={}, stored={} (turn {})",
+        LOG.debug("Knowledge store updated for {}: raw={}, stored={} (turn {})",
                 turn.conversationId(), raw.size(),
                 Math.min(normalized.size(), MAX_STATEMENTS), turn.turnId());
     }

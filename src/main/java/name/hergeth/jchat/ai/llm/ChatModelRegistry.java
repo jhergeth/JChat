@@ -76,7 +76,9 @@ public class ChatModelRegistry {
                         .apiKey(config.getApiKey())
                         .modelName(config.getModelName())
                         .timeout(Duration.ofSeconds(timeoutSeconds(config)))
-                        .maxRetries(maxRetries(config));
+                        .maxRetries(maxRetries(config))
+                        .logRequests(false)
+                        .logResponses(false);
                 if (config.getBaseUrl() != null && !config.getBaseUrl().isBlank()) {
                     builder.baseUrl(config.getBaseUrl());
                 }
@@ -113,6 +115,8 @@ public class ChatModelRegistry {
                         .modelName(config.getModelName())
                         .timeout(Duration.ofSeconds(timeoutSeconds(config)))
                         .maxRetries(maxRetries(config))
+                        .logRequests(false)
+                        .logResponses(false)
                         .customHeaders(Map.of("x-bf-vk", config.getApiKey()));
                 if (Boolean.TRUE.equals(config.getDisableReasoning())) {
                     builder.temperature(0.0);

@@ -11,7 +11,11 @@ public final class ScenarioRunnerMain {
         Config config = Config.parse(args);
         JChatHttpClient client = new JChatHttpClient(config.baseUrl());
         ScenarioRunner runner = new ScenarioRunner(
-                client, config.scenariosDir(), config.outputDir(), config.validate());
+                client,
+                config.scenariosDir(),
+                config.outputDir(),
+                config.validate(),
+                config.semanticValidate());
 
         List<ScenarioRunResult> results = runner.runAll();
 
@@ -42,13 +46,19 @@ public final class ScenarioRunnerMain {
         }
     }
 
-    private record Config(String baseUrl, Path scenariosDir, Path outputDir, boolean validate) {
+    private record Config(
+            String baseUrl,
+            Path scenariosDir,
+            Path outputDir,
+            boolean validate,
+            boolean semanticValidate) {
 
         static Config parse(String[] args) {
             String baseUrl = "http://localhost:8080";
             Path scenariosDir = Path.of("scenarios");
             Path outputDir = Path.of("build/scenario-runs");
             boolean validate = false;
+            boolean semanticValidate = false;
 
             for (int i = 0; i < args.length; i++) {
                 switch (args[i]) {
@@ -56,6 +66,7 @@ public final class ScenarioRunnerMain {
                     case "--scenarios" -> scenariosDir = Path.of(requireValue(args, ++i, "--scenarios"));
                     case "--output" -> outputDir = Path.of(requireValue(args, ++i, "--output"));
                     case "--validate" -> validate = true;
+                    case "--semantic-validate" -> semanticValidate = true;
                     case "--help" -> {
                         printHelp();
                         System.exit(0);
@@ -63,7 +74,10 @@ public final class ScenarioRunnerMain {
                     default -> throw new IllegalArgumentException("Unknown argument: " + args[i]);
                 }
             }
-            return new Config(baseUrl, scenariosDir, outputDir, validate);
+            if (semanticValidate && !validate) {
+                throw new IllegalArgumentException("--semantic-validate requires --validate");
+            }
+            return new Config(baseUrl, scenariosDir, outputDir, validate, semanticValidate);
         }
 
         private static String requireValue(String[] args, int index, String flag) {
@@ -77,11 +91,12 @@ public final class ScenarioRunnerMain {
             System.out.println("""
                     Usage: runScenarios [options]
 
-                      --base-url URL     JChat base URL (default: http://localhost:8080)
-                      --scenarios DIR    Scenario YAML directory (default: scenarios)
-                      --output DIR       Output directory (default: build/scenario-runs)
-                      --validate         Check *.expected.yaml files
-                      --help             Show this help
+                      --base-url URL          JChat base URL (default: http://localhost:8080)
+                      --scenarios DIR         Scenario YAML directory (default: scenarios)
+                      --output DIR            Output directory (default: build/scenario-runs)
+                      --validate              Check *.expected.yaml files
+                      --semantic-validate     LLM fallback for unmatched triples (requires --validate)
+                      --help                  Show this help
                     """);
         }
     }

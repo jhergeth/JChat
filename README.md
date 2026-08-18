@@ -138,6 +138,9 @@ Ausführen:
 # Mit Validierung gegen *.expected.yaml:
 ./gradlew runScenarios --args='--validate'
 
+# Optional: LLM-Fallback für verbleibende Triple-Missmatches:
+./gradlew runScenarios --args='--validate --semantic-validate'
+
 # Andere Base-URL:
 ./gradlew runScenarios --args='--base-url http://host:8080 --validate'
 ```
@@ -152,8 +155,10 @@ Ergebnisse werden unter `build/scenario-runs/` abgelegt:
 
 Validierung:
 
-- `subject` und `predicate` werden nach Normalisierung (lowercase, Whitespace bereinigt) exakt verglichen.
-- `object`-Vergleich ist flexibel: case-insensitive Substring- oder umgekehrter Substring-Vergleich.
+- **Subject:** Präfix-Match — `Maria` matcht `Maria Schmidt`, `Lukas` matcht `Lukas Mueller` (min. 3 Zeichen).
+- **Predicate:** Normalisierung wie in der Extraktion (Aliase, CamelCase) plus Stamm-/Synonym-Match (`hobby` ↔ `hat_hobby`, `faehrt` ↔ `fahrt_auto`).
+- **Object:** Substring-Vergleich nach Umlaut-Folding und ohne Leerzeichen/Satzzeichen (`TechLine` ↔ `Tech Line AG`).
+- **`--semantic-validate`** (optional, erfordert `--validate`): Triples, die regelbasiert nicht matchen, werden per LLM (Meta/check-Task) semantisch geprüft — für explorative Runs, nicht als CI-Standard.
 - Wenn eine erwartete Bedingung nicht erfüllt ist, liefert der Runner Exit-Code 1 (geeignet für CI).
 
 Hinweis: Weitere Details zum Szenario-Format und zum Runner finden sich unter `src/main/java/name/hergeth/jchat/scenario/`.

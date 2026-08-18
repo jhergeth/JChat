@@ -8,6 +8,15 @@ micronaut:
         mapping: /**
         paths: classpath:META-INF/resources
 
+logger:
+  levels:
+    io.micronaut.http.server.netty: WARN
+    io.micronaut.http: WARN
+    io.micronaut.context.event.ApplicationEventPublisher: WARN
+    dev.ai4j.openai4j: WARN
+    dev.langchain4j: WARN
+    io.netty: WARN
+
 jackson:
   serialization:
     write-dates-as-timestamps: false
@@ -37,7 +46,7 @@ app:
 
 llm:
   default-timeout-seconds: 120
-  default-max-retries: 0
+  default-max-retries: 2
   providers:
     or-free:
       type: openai
@@ -67,20 +76,20 @@ llm:
 #      type: openai
 #      api-key: ${OPENAI_API_KEY}
 #      model-name: gpt-4o
-    llama-json:
+    llama-hermes:
       type: bifrost
       api-type: openai
       api-key: ${BIFROST_VIRTUAL_KEY}
       base-url: https://llms.am5.hergeth.cloud/v1
-      model-name: llama-p100/json-fast
+      model-name: llama-p100/hermes3.1-8b
       disable-reasoning: true
       max-output-tokens: 1024
-    llama-chat-fast:
+    llama-qwen35-4b:
       type: bifrost
       api-type: openai
       api-key: ${BIFROST_VIRTUAL_KEY}
       base-url: https://llms.am5.hergeth.cloud/v1
-      model-name: llama-p100/chat-main
+      model-name: llama-p100/qwen3.5-4b
     llama-agentic-coder:
       type: bifrost
       api-type: openai
@@ -94,20 +103,22 @@ llm:
       base-url: https://llms.am5.hergeth.cloud/v1
       model-name: llama-r9700/reasoning-agentic
       max-output-tokens: 4096
-
+      disable-reasoning: true
+      timeout-seconds: 180
+      max-retries: 2
 
   tasks:
     chat:
       provider: llama-agentic-reasoning
     extraction:
-      provider: llama-json
+      provider: llama-hermes
     meta:
-      provider: llama-json
+      provider: llama-hermes
     search-plan:
-      provider: llama-json
+      provider: llama-hermes
     search-extract:
-      provider: llama-json
+      provider: llama-hermes
     check:
-      provider: or-lightning
+      provider: llama-hermes
     default:
-      provider: llama-chat-fast
+      provider: llama-qwen35-4b

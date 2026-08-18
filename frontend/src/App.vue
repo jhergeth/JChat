@@ -2,6 +2,7 @@
 import { onMounted, onUnmounted, ref, computed, watch } from 'vue'
 
 const conversationId = ref('default')
+const conversationIds = ref([])
 const autoRefresh = ref(true)
 const hideMetaRequests = ref(true)
 const followLatestChat = ref(true)
@@ -9,7 +10,6 @@ const loading = ref(false)
 const error = ref(null)
 const traces = ref([])
 const selectedTraceId = ref(null)
-const knowledgeStore = ref([])
 
 let timer = null
 
@@ -30,6 +30,7 @@ const visibleTraces = computed(() =>
 const retrievedContext = computed(() => snapshot.value?.retrievedContext ?? [])
 const searchTrace = computed(() => snapshot.value?.searchTrace ?? null)
 const prompt = computed(() => snapshot.value?.prompt ?? [])
+const knowledgeStore = computed(() => snapshot.value?.knowledgeStore ?? [])
 
 const searchHistory = computed(() =>
   traces.value
@@ -61,6 +62,17 @@ function previewInput(text) {
   return oneLine.length <= 72 ? oneLine : oneLine.slice(0, 72) + '…'
 }
 
+async function fetchConversationIds() {
+  try {
+    const res = await fetch('/api/debug/conversation-ids?limit=100')
+    if (res.ok) {
+      conversationIds.value = await res.json()
+    }
+  } catch {
+    // non-fatal — combobox still allows free text
+  }
+}
+
 async function fetchData() {
   loading.value = true
   error.value = null
@@ -72,9 +84,8 @@ async function fetchData() {
       includeMeta: 'true',
     })
     const tracesUrl = `/api/debug/traces?${params}`
-    const storeUrl = `/api/debug/knowledge-store?conversationId=${encodeURIComponent(conv)}`
 
-    const [tracesRes, storeRes] = await Promise.all([fetch(tracesUrl), fetch(storeUrl)])
+    const tracesRes = await fetch(tracesUrl)
 
     if (!tracesRes.ok) {
       throw new Error(`Traces: HTTP ${tracesRes.status}`)
@@ -89,11 +100,7 @@ async function fetchData() {
       selectedTraceId.value = allTraces[0]?.id ?? null
     }
 
-    if (!storeRes.ok) {
-      throw new Error(`Knowledge store: HTTP ${storeRes.status}`)
-    }
-    const storeData = await storeRes.json()
-    knowledgeStore.value = storeData.statements ?? []
+    await fetchConversationIds()
   } catch (e) {
     error.value = e.message
   } finally {
@@ -158,7 +165,17 @@ function badgeClass(type) {
       <div class="controls">
         <label>
           Conversation ID
-          <input v-model="conversationId" type="text" placeholder="default" @keyup.enter="fetchData" />
+          <input
+            v-model="conversationId"
+            type="text"
+            list="conversation-id-list"
+            placeholder="default"
+            autocomplete="off"
+            @keyup.enter="fetchData"
+          />
+          <datalist id="conversation-id-list">
+            <option v-for="id in conversationIds" :key="id" :value="id" />
+          </datalist>
         </label>
         <button type="button" @click="fetchData" :disabled="loading">Aktualisieren</button>
         <label class="checkbox">
@@ -187,23 +204,25 @@ function badgeClass(type) {
     <div class="layout">
       <aside class="trace-list panel">
         <h2>Turns</h2>
-        <p v-if="!visibleTraces.length" class="empty">Noch keine Turns.</p>
-        <button
-          v-for="trace in visibleTraces"
-          :key="trace.id"
-          type="button"
-          class="trace-item"
-          :class="{ active: trace.id === selectedTraceId }"
-          @click="selectTrace(trace)"
-        >
-          <span class="trace-time">{{ formatTime(trace.timestamp) }}</span>
-          <span :class="badgeClass(trace.requestType)">{{ requestTypeLabel[trace.requestType] ?? trace.requestType }}</span>
-          <span v-if="trace.searchTrace?.searched" class="badge badge-search" title="Websuche">🔍</span>
-          <span class="trace-preview">{{ previewInput(trace.userInput) }}</span>
-        </button>
+        <div class="trace-list-scroll">
+          <p v-if="!visibleTraces.length" class="empty">Noch keine Turns.</p>
+          <button
+            v-for="trace in visibleTraces"
+            :key="trace.id"
+            type="button"
+            class="trace-item"
+            :class="{ active: trace.id === selectedTraceId }"
+            @click="selectTrace(trace)"
+          >
+            <span class="trace-time">{{ formatTime(trace.timestamp) }}</span>
+            <span :class="badgeClass(trace.requestType)">{{ requestTypeLabel[trace.requestType] ?? trace.requestType }}</span>
+            <span v-if="trace.searchTrace?.searched" class="badge badge-search" title="Websuche">🔍</span>
+            <span class="trace-preview">{{ previewInput(trace.userInput) }}</span>
+          </button>
+        </div>
       </aside>
 
-      <main class="content">
+      <main class="content-scroll">
         <section class="panel">
           <h2>User-Eingabe</h2>
           <pre v-if="snapshot?.userInput" class="text-block">{{ snapshot.userInput }}</pre>
@@ -297,7 +316,8 @@ function badgeClass(type) {
         </section>
 
         <section class="panel">
-          <h2>Knowledge Store</h2>
+          <h2>Knowledge Store (Turn-Snapshot)</h2>
+          <p class="store-hint">Stand zum Zeitpunkt dieses Turns — nicht der aktuelle Live-Store.</p>
           <table v-if="knowledgeStore.length">
             <thead>
               <tr>
@@ -318,7 +338,7 @@ function badgeClass(type) {
               </tr>
             </tbody>
           </table>
-          <p v-else class="empty">Store leer für diese Conversation.</p>
+          <p v-else class="empty">Store leer zum Zeitpunkt dieses Turns.</p>
         </section>
       </main>
     </div>
@@ -327,9 +347,17 @@ function badgeClass(type) {
 
 <style scoped>
 .page {
-  max-width: 1200px;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 1rem 1.5rem;
+  overflow: hidden;
+}
+
+.header {
+  flex-shrink: 0;
 }
 
 .header h1 {
@@ -361,7 +389,7 @@ function badgeClass(type) {
   padding: 0.4rem 0.6rem;
   border: 1px solid #d4d4d8;
   border-radius: 6px;
-  min-width: 200px;
+  min-width: 240px;
 }
 
 .controls button {
@@ -391,29 +419,57 @@ function badgeClass(type) {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
+  margin: 0 0 0.75rem;
 }
 
 .layout {
+  flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-columns: 280px 1fr;
   gap: 1rem;
-  margin-top: 1rem;
 }
 
 @media (max-width: 800px) {
+  .page {
+    height: auto;
+    overflow: visible;
+  }
+
   .layout {
     grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .trace-list-scroll,
+  .content-scroll {
+    max-height: 50vh;
   }
 }
 
 .trace-list {
-  max-height: calc(100vh - 12rem);
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin-bottom: 0;
+  overflow: hidden;
 }
 
 .trace-list h2 {
   margin-top: 0;
   font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.trace-list-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.content-scroll {
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .trace-item {
@@ -541,7 +597,9 @@ function badgeClass(type) {
   font-size: 0.8125rem;
 }
 
-.content {
-  min-width: 0;
+.store-hint {
+  margin: -0.5rem 0 0.75rem;
+  font-size: 0.8125rem;
+  color: #71717a;
 }
 </style>

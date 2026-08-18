@@ -121,7 +121,7 @@ public class ChatCompletionsController {
             LOG.debug("Meta-request ({}) — skipping knowledge store and extraction", requestType);
         }
 
-        LOG.info("Chat completion for conversation {} via {} (type={})", conversationId, provider, requestType);
+        LOG.debug("Chat completion for conversation {} via {} (type={})", conversationId, provider, requestType);
         String answer;
         try {
             answer = aiServiceFactory.chat(provider, messages);
@@ -160,6 +160,10 @@ public class ChatCompletionsController {
 
     private String resolveProvider(ChatCompletionRequest request, boolean isChat) {
         if (!isChat) {
+            String lastMessage = lastUserMessage(request);
+            if (lastMessage.contains("scenario_triple_match") && taskRouter.hasTask("check")) {
+                return taskRouter.providerFor("check");
+            }
             if (taskRouter.hasTask("meta")) {
                 return taskRouter.providerFor("meta");
             }

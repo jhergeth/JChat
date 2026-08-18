@@ -39,6 +39,11 @@ public class DebugController {
         return traceStore.recent(Math.min(limit, 100), id, includeMeta);
     }
 
+    @Get("/conversation-ids")
+    public List<String> conversationIds(@QueryValue(defaultValue = "100") int limit) {
+        return traceStore.conversationIds(Math.min(limit, 100));
+    }
+
     @Get("/trace/{id}")
     public Optional<TurnDebugSnapshot> trace(String id) {
         return traceStore.findById(id);

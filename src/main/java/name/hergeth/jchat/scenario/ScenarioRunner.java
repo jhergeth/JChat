@@ -12,7 +12,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 
 public class ScenarioRunner {
@@ -25,12 +24,21 @@ public class ScenarioRunner {
     private final Path scenariosDir;
     private final Path outputDir;
     private final boolean validate;
+    private final boolean semanticValidate;
+    private final SemanticTripleValidator semanticValidator;
 
-    public ScenarioRunner(JChatHttpClient client, Path scenariosDir, Path outputDir, boolean validate) {
+    public ScenarioRunner(
+            JChatHttpClient client,
+            Path scenariosDir,
+            Path outputDir,
+            boolean validate,
+            boolean semanticValidate) {
         this.client = client;
         this.scenariosDir = scenariosDir;
         this.outputDir = outputDir;
         this.validate = validate;
+        this.semanticValidate = semanticValidate;
+        this.semanticValidator = semanticValidate ? new SemanticTripleValidator(client) : null;
     }
 
     public List<ScenarioRunResult> runAll() throws IOException, InterruptedException {
@@ -88,7 +96,7 @@ public class ScenarioRunner {
     }
 
     private ScenarioValidationResult validate(ScenarioDefinition scenario, List<StatementSnapshot> store)
-            throws IOException {
+            throws IOException, InterruptedException {
         Path scenarioFile = scenariosDir.resolve(scenario.name() + ".yaml");
         Optional<ScenarioExpected> expectedOpt = ScenarioLoader.loadExpected(scenarioFile);
         if (expectedOpt.isEmpty()) {
@@ -103,32 +111,21 @@ public class ScenarioRunner {
         }
 
         for (TripleExpectation triple : expected.mustContain()) {
-            if (!containsTriple(store, triple)) {
-                failures.add("Missing triple: " + formatTriple(triple));
+            if (containsTriple(store, triple)) {
+                continue;
             }
+            if (semanticValidate && semanticValidator.matches(store, triple)) {
+                System.out.printf("  semantic match: %s%n", formatTriple(triple));
+                continue;
+            }
+            failures.add("Missing triple: " + formatTriple(triple));
         }
 
         return new ScenarioValidationResult(failures.isEmpty(), failures);
     }
 
-    private static boolean containsTriple(List<StatementSnapshot> store, TripleExpectation expected) {
-        return store.stream().anyMatch(actual -> matches(actual, expected));
-    }
-
-    private static boolean matches(StatementSnapshot actual, TripleExpectation expected) {
-        if (!normalize(actual.subject()).equals(normalize(expected.subject()))) {
-            return false;
-        }
-        if (!normalize(actual.predicate()).equals(normalize(expected.predicate()))) {
-            return false;
-        }
-        String actualObject = normalize(actual.object());
-        String expectedObject = normalize(expected.object());
-        return actualObject.contains(expectedObject) || expectedObject.contains(actualObject);
-    }
-
-    private static String normalize(String value) {
-        return value == null ? "" : value.toLowerCase(Locale.ROOT).replaceAll("\\s+", " ").trim();
+    private boolean containsTriple(List<StatementSnapshot> store, TripleExpectation expected) {
+        return store.stream().anyMatch(actual -> TripleMatcher.matches(actual, expected));
     }
 
     private static String formatTriple(TripleExpectation triple) {

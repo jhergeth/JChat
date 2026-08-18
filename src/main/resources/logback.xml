@@ -1,0 +1,26 @@
+<configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="STDOUT"/>
+    </root>
+
+    <!-- Micronaut HTTP: Request/Response DEBUG lines from NettyRequestLifecycle -->
+    <logger name="io.micronaut.http.server.netty" level="WARN"/>
+    <logger name="io.micronaut.http.client" level="WARN"/>
+    <logger name="io.micronaut.http" level="WARN"/>
+
+    <!-- Micronaut DI: "Publishing event: ..." at DEBUG -->
+    <logger name="io.micronaut.context.event.ApplicationEventPublisher" level="WARN"/>
+
+    <!-- LangChain4j OpenAI HTTP client: Request:/Response: bodies -->
+    <logger name="dev.ai4j.openai4j" level="WARN"/>
+    <logger name="dev.langchain4j" level="WARN"/>
+
+    <logger name="io.netty" level="WARN"/>
+    <logger name="org.apache.http" level="WARN"/>
+</configuration>

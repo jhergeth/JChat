@@ -27,7 +27,8 @@ mustContain:
 minStatements: 5
 ```
 
-`object`-Vergleich ist flexibel (Substring, case-insensitive).
+`object`-Vergleich ist flexibel (Substring, Umlaute, ohne Leerzeichen). Subject und Predicate
+tolerieren Kurzformen und typische Extraktions-Varianten (siehe `TripleMatcher`).
 
 ## Ausführen
 
@@ -38,6 +39,9 @@ JChat muss laufen (`./gradlew run`):
 
 # Mit Validierung gegen *.expected.yaml:
 ./gradlew runScenarios --args='--validate'
+
+# Optional: LLM-Fallback für Triples, die regelbasiert nicht matchen:
+./gradlew runScenarios --args='--validate --semantic-validate'
 
 # Andere URL:
 ./gradlew runScenarios --args='--base-url http://am5:8080 --validate'

@@ -3,6 +3,7 @@ package name.hergeth.jchat.debug;
 import jakarta.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -48,6 +49,19 @@ public class DebugTraceStore {
         return filtered(conversationId, includeMeta).stream()
                 .limit(limit)
                 .toList();
+    }
+
+    /** Distinct conversation IDs, most recently seen first (max {@value #MAX_TRACES}). */
+    public List<String> conversationIds(int limit) {
+        int cap = Math.min(Math.max(limit, 1), MAX_TRACES);
+        LinkedHashSet<String> ids = new LinkedHashSet<>();
+        for (TurnDebugSnapshot trace : traces) {
+            ids.add(trace.conversationId());
+            if (ids.size() >= cap) {
+                break;
+            }
+        }
+        return List.copyOf(ids);
     }
 
     private List<TurnDebugSnapshot> filtered(String conversationId, boolean includeMeta) {

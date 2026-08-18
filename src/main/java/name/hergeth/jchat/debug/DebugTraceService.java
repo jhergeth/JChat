@@ -72,7 +72,7 @@ public class DebugTraceService {
                 prior.llmResponse(),
                 prior.chatProvider(),
                 SearchTraceView.from(searchTrace),
-                toViews(knowledgeStore.all(prior.conversationId())));
+                prior.knowledgeStore());
         traceStore.replace(updated);
     }
 
