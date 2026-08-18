@@ -64,6 +64,10 @@ node {
 tasks.named<com.github.gradle.node.npm.task.NpmTask>("npm_run_build") {
     group = "frontend"
     description = "Baut das Vue-Debug-UI nach frontend/dist"
+    inputs.dir("frontend/src")
+    inputs.file("frontend/index.html")
+    inputs.file("frontend/vite.config.js")
+    inputs.file("frontend/package.json")
     outputs.dir("frontend/dist")
 }
 
@@ -74,9 +78,20 @@ tasks.named<com.github.gradle.node.npm.task.NpmTask>("npmInstall") {
 
 tasks.named<ProcessResources>("processResources") {
     dependsOn("npm_run_build")
+    doFirst {
+        // Vite erzeugt gehashte Dateinamen — alte Bundles sonst weiter auslieferbar.
+        val uiDir = file("$buildDir/resources/main/META-INF/resources")
+        if (uiDir.exists()) {
+            uiDir.deleteRecursively()
+        }
+    }
     from("frontend/dist") {
         into("META-INF/resources")
     }
+}
+
+tasks.named<JavaExec>("run") {
+    dependsOn("processResources")
 }
 
 tasks.register<JavaExec>("runScenarios") {

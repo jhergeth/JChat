@@ -11,6 +11,8 @@ const error = ref(null)
 const traces = ref([])
 const selectedTraceId = ref(null)
 
+const UI_VERSION = '2026-08-18b'
+
 let timer = null
 
 const snapshot = computed(() => {
@@ -159,8 +161,8 @@ function badgeClass(type) {
 <template>
   <div class="page">
     <header class="header">
-      <h1>JChat Debug</h1>
-      <p class="subtitle">Turn-Historie — Eingabe, Kontext, Prompt, Antwort, Knowledge Store</p>
+      <h1>JChat Debug <span class="ui-version">{{ UI_VERSION }}</span></h1>
+      <p class="subtitle">Turn-Historie — Eingabe, Kontext, Prompt, Antwort, Knowledge Store (Turn-Snapshot)</p>
 
       <div class="controls">
         <label>
@@ -363,6 +365,13 @@ function badgeClass(type) {
 .header h1 {
   margin: 0 0 0.25rem;
   font-size: 1.5rem;
+}
+
+.ui-version {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #2563eb;
+  vertical-align: middle;
 }
 
 .subtitle {

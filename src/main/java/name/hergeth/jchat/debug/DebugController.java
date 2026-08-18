@@ -44,6 +44,13 @@ public class DebugController {
         return traceStore.conversationIds(Math.min(limit, 100));
     }
 
+    @Get("/ui-info")
+    public Map<String, Object> uiInfo() {
+        return Map.of(
+                "uiVersion", "2026-08-18b",
+                "features", List.of("turn-snapshot-store", "conversation-combobox", "dual-scroll-layout"));
+    }
+
     @Get("/trace/{id}")
     public Optional<TurnDebugSnapshot> trace(String id) {
         return traceStore.findById(id);
